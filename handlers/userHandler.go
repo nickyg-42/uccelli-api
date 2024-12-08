@@ -23,6 +23,5 @@ func GetUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Respond with user data
 	json.NewEncoder(w).Encode(user)
 }

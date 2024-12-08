@@ -3,20 +3,23 @@ package db
 import (
 	"context"
 	"errors"
+	"nest/models"
 )
 
-type User struct {
-	ID    int
-	Name  string
-	Email string
-}
-
-func GetUserByID(ctx context.Context, id int) (*User, error) {
-	var user User
+func GetUserByID(ctx context.Context, id int) (*models.User, error) {
+	var user models.User
 	query := "SELECT id, name, email FROM users WHERE id = $1"
 	err := Pool.QueryRow(ctx, query, id).Scan(&user.ID, &user.Name, &user.Email)
 	if err != nil {
-		return nil, errors.New("User not found")
+		return nil, errors.New("user not found")
 	}
 	return &user, nil
+}
+
+func CreateUser(username string, hashedPassword []byte) error {
+	return nil
+}
+
+func GetUserByUsername(username string) (*models.User, error) {
+	return nil, errors.New("")
 }
