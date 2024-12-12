@@ -17,6 +17,12 @@ func GetUserByID(ctx context.Context, id int) (*models.User, error) {
 }
 
 func CreateUser(username string, hashedPassword []byte) error {
+	// var user models.User
+	// query := "INSERT INTO id, name, email FROM users WHERE id = $1"
+	// err := Pool.Inse(ctx, query, id).Scan(&user.ID, &user.Name, &user.Email)
+	// if err != nil {
+	// 	return nil, errors.New("user not found")
+	// }
 	return nil
 }
 
