@@ -3,29 +3,50 @@ package db
 import (
 	"context"
 	"errors"
+	"fmt"
 	"nest/models"
 )
 
 func GetUserByID(ctx context.Context, id int) (*models.User, error) {
 	var user models.User
-	query := "SELECT id, name, email FROM users WHERE id = $1"
-	err := Pool.QueryRow(ctx, query, id).Scan(&user.ID, &user.Name, &user.Email)
+	query := "SELECT id, username, email FROM users WHERE id = $1"
+	err := Pool.QueryRow(ctx, query, id).Scan(&user.ID, &user.Username, &user.Email)
 	if err != nil {
 		return nil, errors.New("user not found")
 	}
 	return &user, nil
 }
 
-func CreateUser(username string, hashedPassword []byte) error {
-	// var user models.User
-	// query := "INSERT INTO id, name, email FROM users WHERE id = $1"
-	// err := Pool.Inse(ctx, query, id).Scan(&user.ID, &user.Name, &user.Email)
-	// if err != nil {
-	// 	return nil, errors.New("user not found")
-	// }
-	return nil
+func CreateUser(ctx context.Context, user *models.User) (*models.User, error) {
+	query := `
+		INSERT INTO users (first_name, last_name, username, email, password_hash)
+		VALUES ($1, $2, $3, $4, $5)
+		RETURNING id, created_at
+	`
+
+	err := Pool.QueryRow(
+		ctx,
+		query,
+		user.FirstName,
+		user.LastName,
+		user.Username,
+		user.Email,
+		user.PasswordHash,
+	).Scan(&user.ID, &user.CreatedAt)
+
+	if err != nil {
+		return nil, fmt.Errorf("failed to create user: %w", err)
+	}
+
+	return user, nil
 }
 
-func GetUserByUsername(username string) (*models.User, error) {
-	return nil, errors.New("")
+func GetUserByUsername(ctx context.Context, username string) (*models.User, error) {
+	var user models.User
+	query := "SELECT id, username, password_hash FROM users WHERE username = $1"
+	err := Pool.QueryRow(ctx, query, username).Scan(&user.ID, &user.Username, &user.PasswordHash)
+	if err != nil {
+		return nil, errors.New("user not found")
+	}
+	return &user, nil
 }
