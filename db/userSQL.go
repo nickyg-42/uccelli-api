@@ -2,6 +2,7 @@ package db
 
 import (
 	"context"
+	"database/sql"
 	"errors"
 	"fmt"
 	"nest/models"
@@ -43,10 +44,27 @@ func CreateUser(ctx context.Context, user *models.User) (*models.User, error) {
 
 func GetUserByUsername(ctx context.Context, username string) (*models.User, error) {
 	var user models.User
-	query := "SELECT id, username, password_hash FROM users WHERE username = $1"
-	err := Pool.QueryRow(ctx, query, username).Scan(&user.ID, &user.Username, &user.PasswordHash)
+	query := `
+        SELECT id, username, email, first_name, last_name, password_hash, role, created_at
+        FROM users 
+        WHERE username = $1
+    `
+	err := Pool.QueryRow(ctx, query, username).Scan(
+		&user.ID,
+		&user.Username,
+		&user.Email,
+		&user.FirstName,
+		&user.LastName,
+		&user.PasswordHash,
+		&user.Role,
+		&user.CreatedAt,
+	)
+
 	if err != nil {
-		return nil, errors.New("user not found")
+		if err == sql.ErrNoRows {
+			return nil, errors.New("user not found")
+		}
+		return nil, fmt.Errorf("query error: %w", err)
 	}
 	return &user, nil
 }

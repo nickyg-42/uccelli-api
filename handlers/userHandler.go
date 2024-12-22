@@ -17,6 +17,15 @@ func GetUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	role := r.Context().Value("role").(string)
+	authenticatedUserID := r.Context().Value("user_id")
+
+	// If not self or SA, deny
+	if id != authenticatedUserID && role != "sa" {
+		http.Error(w, "You do not have access to this user", http.StatusForbidden)
+		return
+	}
+
 	user, err := db.GetUserByID(r.Context(), id)
 	if err != nil {
 		http.Error(w, "User not found", http.StatusNotFound)

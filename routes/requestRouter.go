@@ -11,12 +11,20 @@ import (
 func RegisterRoutes() http.Handler {
 	r := chi.NewRouter()
 
-	// Auth endpoints
 	r.Post("/login", handlers.Login)
 	r.Post("/register", handlers.Register)
 
-	// User endpoints (protected by JWT)
-	r.With(middleware.JWTAuthMiddleware).Get("/user/{id}", handlers.GetUser)
+	// Authenticated Routes
+	r.With(middleware.JWTAuthMiddleware).Group(func(r chi.Router) {
+		// Endpoint accessible to all authenticated users
+		r.Get("/user/{id}", handlers.GetUser)
+
+		// Endpoint accessible only to admins
+		//r.With(middleware.RoleMiddleware("admin")).Get("/admin/dashboard", handlers.AdminDashboard)
+
+		// Endpoint accessible only to super admins
+		//r.With(middleware.RoleMiddleware("superadmin")).Get("/superadmin/settings", handlers.SuperAdminSettings)
+	})
 
 	return r
 }

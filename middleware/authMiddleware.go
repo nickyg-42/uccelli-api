@@ -34,9 +34,30 @@ func JWTAuthMiddleware(next http.Handler) http.Handler {
 		}
 
 		if claims, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
-			r = r.WithContext(context.WithValue(r.Context(), "username", claims["username"]))
+			username := claims["username"].(string)
+			role := claims["role"].(string)
+			userID := int(claims["user_id"].(float64))
+
+			ctx := context.WithValue(r.Context(), "username", username)
+			ctx = context.WithValue(ctx, "role", role)
+			ctx = context.WithValue(ctx, "user_id", userID)
+
+			r = r.WithContext(ctx)
 		}
 
 		next.ServeHTTP(w, r)
 	})
+}
+
+func RoleMiddleware(requiredRole string) func(http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			role, ok := r.Context().Value("role").(string)
+			if !ok || role != requiredRole {
+				http.Error(w, "Insufficient permissions", http.StatusForbidden)
+				return
+			}
+			next.ServeHTTP(w, r)
+		})
+	}
 }
