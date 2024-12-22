@@ -10,7 +10,7 @@ import (
 	"github.com/go-chi/chi/v5"
 )
 
-func GetUser(w http.ResponseWriter, r *http.Request) {
+func GetGroup(w http.ResponseWriter, r *http.Request) {
 	idStr := chi.URLParam(r, "id")
 	id, err := strconv.Atoi(idStr)
 	if err != nil {
@@ -27,9 +27,9 @@ func GetUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	user, err := db.GetUserByID(r.Context(), id)
+	user, err := db.GetGroupByID(r.Context(), id)
 	if err != nil {
-		http.Error(w, "User not found", http.StatusNotFound)
+		http.Error(w, "Group not found", http.StatusNotFound)
 		return
 	}
 

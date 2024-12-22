@@ -28,6 +28,7 @@ func Register(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Validate FIXME
+	// Check if email or username exists also
 	if userDto.FirstName == "" || userDto.LastName == "" || userDto.Email == "" || userDto.Username == "" || userDto.Password == "" {
 		http.Error(w, "All fields are required", http.StatusBadRequest)
 		return

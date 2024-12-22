@@ -20,7 +20,6 @@ func JWTAuthMiddleware(next http.Handler) http.Handler {
 
 		tokenString = strings.TrimPrefix(tokenString, "Bearer ")
 
-		// Parse token
 		token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
 			if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 				return nil, fmt.Errorf("invalid signing method")
@@ -47,17 +46,4 @@ func JWTAuthMiddleware(next http.Handler) http.Handler {
 
 		next.ServeHTTP(w, r)
 	})
-}
-
-func RoleMiddleware(requiredRole string) func(http.Handler) http.Handler {
-	return func(next http.Handler) http.Handler {
-		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			role, ok := r.Context().Value("role").(string)
-			if !ok || role != requiredRole {
-				http.Error(w, "Insufficient permissions", http.StatusForbidden)
-				return
-			}
-			next.ServeHTTP(w, r)
-		})
-	}
 }
