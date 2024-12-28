@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"nest/models"
+	"time"
 )
 
 func CreateEvent(ctx context.Context, event *models.Event) (*models.Event, error) {
@@ -19,7 +20,7 @@ func CreateEvent(ctx context.Context, event *models.Event) (*models.Event, error
 		ctx,
 		query,
 		event.GroupID,
-		event.CreatedBy,
+		event.CreatedByID,
 		event.Name,
 		event.Description,
 		event.StartTime,
@@ -43,7 +44,7 @@ func GetEventByID(ctx context.Context, eventID int) (*models.Event, error) {
 	err := Pool.QueryRow(ctx, query, eventID).Scan(
 		&event.ID,
 		&event.GroupID,
-		&event.CreatedBy,
+		&event.CreatedByID,
 		&event.Name,
 		&event.Description,
 		&event.StartTime,
@@ -84,7 +85,7 @@ func GetAllEventsByUser(ctx context.Context, userID int) ([]models.Event, error)
 			&event.Description,
 			&event.StartTime,
 			&event.EndTime,
-			&event.CreatedBy,
+			&event.CreatedByID,
 			&event.CreatedAt,
 		)
 		if err != nil {
@@ -124,7 +125,7 @@ func GetAllEventsByGroup(ctx context.Context, groupID int) ([]models.Event, erro
 			&event.Description,
 			&event.StartTime,
 			&event.EndTime,
-			&event.CreatedBy,
+			&event.CreatedByID,
 			&event.CreatedAt,
 		)
 		if err != nil {
@@ -138,4 +139,84 @@ func GetAllEventsByGroup(ctx context.Context, groupID int) ([]models.Event, erro
 	}
 
 	return events, nil
+}
+
+func UpdateEventName(ctx context.Context, eventID int, eventName string) error {
+	query := `
+		UPDATE events
+		SET name = $1
+		WHERE id = $2;
+	`
+	_, err := Pool.Exec(
+		ctx,
+		query,
+		eventName,
+		eventID,
+	)
+
+	if err != nil {
+		return fmt.Errorf("failed to update event: %w", err)
+	}
+
+	return nil
+}
+
+func UpdateEventDescription(ctx context.Context, eventID int, description string) error {
+	query := `
+		UPDATE events
+		SET description = $1
+		WHERE id = $2;
+	`
+	_, err := Pool.Exec(
+		ctx,
+		query,
+		description,
+		eventID,
+	)
+
+	if err != nil {
+		return fmt.Errorf("failed to update event: %w", err)
+	}
+
+	return nil
+}
+
+func UpdateEventStartTime(ctx context.Context, eventID int, startTime time.Time) error {
+	query := `
+		UPDATE events
+		SET start_time = $1
+		WHERE id = $2;
+	`
+	_, err := Pool.Exec(
+		ctx,
+		query,
+		startTime,
+		eventID,
+	)
+
+	if err != nil {
+		return fmt.Errorf("failed to update event: %w", err)
+	}
+
+	return nil
+}
+
+func UpdateEventEndTime(ctx context.Context, eventID int, endTime time.Time) error {
+	query := `
+		UPDATE events
+		SET end_time = $1
+		WHERE id = $2;
+	`
+	_, err := Pool.Exec(
+		ctx,
+		query,
+		endTime,
+		eventID,
+	)
+
+	if err != nil {
+		return fmt.Errorf("failed to update event: %w", err)
+	}
+
+	return nil
 }

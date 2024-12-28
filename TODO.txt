@@ -1,3 +1,4 @@
 // Log ips and access times
 // Add logging to http errors (maybe universal logger)
 // Unit tests
+// VALIDATION, on update methods as well as creaiton

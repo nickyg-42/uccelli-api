@@ -61,7 +61,7 @@ func DeleteGroup(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if !utils.IsGroupOwnerOrSA(r, groupID) {
+	if !utils.IsGroupAdminOrSA(r, groupID) {
 		http.Error(w, "You do not have access to this resource", http.StatusForbidden)
 		return
 	}
@@ -93,13 +93,18 @@ func AddUserToGroup(w http.ResponseWriter, r *http.Request) {
 	var payload struct {
 		RoleInGroup models.Role `json:"role_in_group"`
 	}
+	err = json.NewDecoder(r.Body).Decode(&payload)
+	if err != nil || payload.RoleInGroup == "" {
+		http.Error(w, "Invalid request payload", http.StatusBadRequest)
+		return
+	}
 
-	if !utils.IsGroupOwnerOrSA(r, groupID) {
+	if !utils.IsGroupAdminOrSA(r, groupID) {
 		http.Error(w, "You do not have access to this resource", http.StatusForbidden)
 		return
 	}
 
-	err = db.AddUserToGroup(r.Context(), userID, groupID, payload.RoleInGroup)
+	err = db.AddGroupMember(r.Context(), userID, groupID, payload.RoleInGroup)
 	if err != nil {
 		http.Error(w, "Failed to add user to group", http.StatusInternalServerError)
 		return
@@ -123,12 +128,12 @@ func RemoveUserFromGroup(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if !utils.IsGroupOwnerOrSA(r, groupID) {
+	if !utils.IsGroupAdminOrSA(r, groupID) {
 		http.Error(w, "You do not have access to this resource", http.StatusForbidden)
 		return
 	}
 
-	err = db.RemoveUserFromGroup(r.Context(), userID, groupID)
+	err = db.RemoveGroupMember(r.Context(), userID, groupID)
 	if err != nil {
 		http.Error(w, "Failed to remove user from group", http.StatusInternalServerError)
 		return
@@ -145,7 +150,7 @@ func GetAllMembersInGroup(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if !utils.IsGroupOwnerOrSA(r, groupID) {
+	if !utils.IsGroupAdminOrSA(r, groupID) {
 		http.Error(w, "You do not have access to this resource", http.StatusForbidden)
 		return
 	}
@@ -159,4 +164,91 @@ func GetAllMembersInGroup(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(users)
 }
 
-// TODO update group logic
+func UpdateGroupName(w http.ResponseWriter, r *http.Request) {
+	idStr := chi.URLParam(r, "id")
+	groupID, err := strconv.Atoi(idStr)
+	if err != nil {
+		http.Error(w, "Invalid ID", http.StatusBadRequest)
+		return
+	}
+
+	if !utils.IsGroupAdminOrSA(r, groupID) {
+		http.Error(w, "You do not have access to this resource", http.StatusForbidden)
+		return
+	}
+
+	var payload struct {
+		GroupName string `json:"group_name"`
+	}
+	err = json.NewDecoder(r.Body).Decode(&payload)
+	if err != nil || payload.GroupName == "" {
+		http.Error(w, "Invalid request payload", http.StatusBadRequest)
+		return
+	}
+
+	err = db.UpdateGroupName(r.Context(), groupID, payload.GroupName)
+	if err != nil {
+		http.Error(w, "Failed to update group name", http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+}
+
+func AddGroupAdmin(w http.ResponseWriter, r *http.Request) {
+	idStr := chi.URLParam(r, "id")
+	groupID, err := strconv.Atoi(idStr)
+	if err != nil {
+		http.Error(w, "Invalid ID", http.StatusBadRequest)
+		return
+	}
+
+	idStr = chi.URLParam(r, "user_id")
+	userID, err := strconv.Atoi(idStr)
+	if err != nil {
+		http.Error(w, "Invalid ID", http.StatusBadRequest)
+		return
+	}
+
+	// if !utils.IsSA(r) {
+	// 	http.Error(w, "You do not have access to this resource", http.StatusForbidden)
+	// 	return
+	// }
+
+	err = db.AddGroupAdmin(r.Context(), groupID, userID)
+	if err != nil {
+		http.Error(w, "Failed to add group admin", http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+}
+
+func RemoveGroupAdmin(w http.ResponseWriter, r *http.Request) {
+	idStr := chi.URLParam(r, "id")
+	groupID, err := strconv.Atoi(idStr)
+	if err != nil {
+		http.Error(w, "Invalid ID", http.StatusBadRequest)
+		return
+	}
+
+	idStr = chi.URLParam(r, "user_id")
+	userID, err := strconv.Atoi(idStr)
+	if err != nil {
+		http.Error(w, "Invalid ID", http.StatusBadRequest)
+		return
+	}
+
+	// if !utils.IsSA(r) {
+	// 	http.Error(w, "You do not have access to this resource", http.StatusForbidden)
+	// 	return
+	// }
+
+	err = db.RemoveGroupAdmin(r.Context(), groupID, userID)
+	if err != nil {
+		http.Error(w, "Failed to remove group admin", http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+}

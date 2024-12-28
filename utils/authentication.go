@@ -34,7 +34,13 @@ func IsSelfOrSA(r *http.Request, userID int) bool {
 	return true
 }
 
-func IsGroupOwnerOrSA(r *http.Request, groupID int) bool {
+func IsSA(r *http.Request) bool {
+	role := r.Context().Value("role").(string)
+
+	return role != string(models.SuperAdmin)
+}
+
+func IsGroupAdminOrSA(r *http.Request, groupID int) bool {
 	role := r.Context().Value("role").(string)
 	authenticatedUserID := r.Context().Value("user_id").(int)
 	isGroupAdmin, err := db.IsUserGroupAdmin(r.Context(), authenticatedUserID, groupID)
@@ -65,7 +71,29 @@ func IsEventCreatorOrGroupMemberOrSA(r *http.Request, eventID int) bool {
 	}
 
 	// If not group member, event creator, or SA, deny
-	if role != string(models.SuperAdmin) && !isGroupMember && event.CreatedBy.ID != int64(authenticatedUserID) {
+	if role != string(models.SuperAdmin) && !isGroupMember && event.CreatedByID != int64(authenticatedUserID) {
+		return false
+	}
+
+	return true
+}
+
+func IsEventCreatorOrGroupAdminOrSA(r *http.Request, eventID int) bool {
+	role := r.Context().Value("role").(string)
+	authenticatedUserID := r.Context().Value("user_id").(int)
+
+	event, err := db.GetEventByID(r.Context(), eventID)
+	if err != nil {
+		return false
+	}
+
+	isGroupAdmin, err := db.IsUserGroupAdmin(r.Context(), authenticatedUserID, int(event.GroupID))
+	if err != nil {
+		return false
+	}
+
+	// If not group admin, event creator, or SA, deny
+	if role != string(models.SuperAdmin) && !isGroupAdmin && event.CreatedByID != int64(authenticatedUserID) {
 		return false
 	}
 

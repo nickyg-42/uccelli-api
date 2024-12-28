@@ -9,6 +9,6 @@ type Event struct {
 	Description string    `json:"description"`
 	StartTime   time.Time `json:"start_time"`
 	EndTime     time.Time `json:"end_time"`
-	CreatedBy   User      `json:"created_by"`
+	CreatedByID int64     `json:"created_by_id"`
 	CreatedAt   time.Time `json:"created_at"`
 }

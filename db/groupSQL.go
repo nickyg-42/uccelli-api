@@ -18,7 +18,7 @@ func CreateGroup(ctx context.Context, group *models.Group) (*models.Group, error
 	err := Pool.QueryRow(
 		ctx,
 		query,
-		group.CreatedBy,
+		group.CreatedByID,
 		group.Name,
 	).Scan(&group.ID, &group.CreatedAt)
 
@@ -38,7 +38,7 @@ func GetGroupByID(ctx context.Context, groupID int) (*models.Group, error) {
     `
 	err := Pool.QueryRow(ctx, query, groupID).Scan(
 		&group.ID,
-		&group.CreatedBy,
+		&group.CreatedByID,
 		&group.Name,
 		&group.CreatedAt,
 	)
@@ -52,7 +52,7 @@ func GetGroupByID(ctx context.Context, groupID int) (*models.Group, error) {
 	return &group, nil
 }
 
-func AddUserToGroup(ctx context.Context, userID, groupID int, roleInGroup models.Role) error {
+func AddGroupMember(ctx context.Context, userID, groupID int, roleInGroup models.Role) error {
 	// validate user exists
 	_, err := GetUserByID(ctx, userID)
 	if err != nil {
@@ -85,9 +85,28 @@ func AddUserToGroup(ctx context.Context, userID, groupID int, roleInGroup models
 	return nil
 }
 
+func RemoveGroupMember(ctx context.Context, userID, groupID int) error {
+	query := `
+		DELETE FROM group_memberships
+		WHERE group_id = $2 AND user_id = $1;
+	`
+	_, err := Pool.Exec(
+		ctx,
+		query,
+		userID,
+		groupID,
+	)
+
+	if err != nil {
+		return fmt.Errorf("failed to remove user from group: %w", err)
+	}
+
+	return nil
+}
+
 func GetAllGroupsForUser(ctx context.Context, userID int) ([]models.Group, error) {
 	query := `
-		SELECT g.group_id, g.group_name, g.description, g.created_at
+		SELECT g.group_id, g.group_name, g.created_by, g.created_at
 		FROM groups g
 		INNER JOIN group_memberships gm ON g.group_id = gm.group_id
 		WHERE gm.user_id = $1
@@ -106,8 +125,7 @@ func GetAllGroupsForUser(ctx context.Context, userID int) ([]models.Group, error
 		err := rows.Scan(
 			&group.ID,
 			&group.Name,
-			&group.Owner,
-			&group.CreatedBy,
+			&group.CreatedByID,
 			&group.CreatedAt,
 		)
 		if err != nil {
@@ -195,25 +213,6 @@ func IsUserGroupMember(ctx context.Context, userID, groupID int) (bool, error) {
 	return true, nil
 }
 
-func RemoveUserFromGroup(ctx context.Context, userID, groupID int) error {
-	query := `
-		DELETE FROM group_memberships
-		WHERE group_id = $2 AND user_id = $1;
-	`
-	_, err := Pool.Exec(
-		ctx,
-		query,
-		userID,
-		groupID,
-	)
-
-	if err != nil {
-		return fmt.Errorf("failed to remove user from group: %w", err)
-	}
-
-	return nil
-}
-
 func DeleteGroup(ctx context.Context, groupID int) error {
 	query := `
 		DELETE FROM groups
@@ -227,6 +226,66 @@ func DeleteGroup(ctx context.Context, groupID int) error {
 
 	if err != nil {
 		return fmt.Errorf("failed to delete group: %w", err)
+	}
+
+	return nil
+}
+
+func UpdateGroupName(ctx context.Context, groupID int, groupName string) error {
+	query := `
+		UPDATE groups
+		SET group_name = $1
+		WHERE group_id = $2;
+	`
+	_, err := Pool.Exec(
+		ctx,
+		query,
+		groupName,
+		groupID,
+	)
+
+	if err != nil {
+		return fmt.Errorf("failed to update group: %w", err)
+	}
+
+	return nil
+}
+
+func AddGroupAdmin(ctx context.Context, groupID, userID int) error {
+	query := `
+		UPDATE group_memberships
+		SET role_in_group = 'group_admin'
+		WHERE group_id = $1 AND user_id = $2;
+	`
+	_, err := Pool.Exec(
+		ctx,
+		query,
+		groupID,
+		userID,
+	)
+
+	if err != nil {
+		return fmt.Errorf("failed to add group admin: %w", err)
+	}
+
+	return nil
+}
+
+func RemoveGroupAdmin(ctx context.Context, groupID, userID int) error {
+	query := `
+		UPDATE group_memberships
+		SET role_in_group = 'member'
+		WHERE group_id = $1 AND user_id = $2;
+	`
+	_, err := Pool.Exec(
+		ctx,
+		query,
+		groupID,
+		userID,
+	)
+
+	if err != nil {
+		return fmt.Errorf("failed to remove group admin: %w", err)
 	}
 
 	return nil

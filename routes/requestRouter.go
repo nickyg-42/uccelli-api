@@ -3,6 +3,7 @@ package routes
 import (
 	"nest/handlers"
 	"nest/middleware"
+	"nest/models"
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
@@ -18,7 +19,7 @@ func RegisterRoutes() http.Handler {
 	r.With(middleware.JWTAuthMiddleware).Group(func(r chi.Router) {
 		// User
 		r.Get("/user/{id}", handlers.GetUser)
-		r.Get("/user/{id}/events", handlers.GetAllEventsForUser)
+		r.Get("/user/{id}/event", handlers.GetAllEventsForUser)
 
 		r.Delete("/user/{id}", handlers.DeleteUser)
 
@@ -28,13 +29,15 @@ func RegisterRoutes() http.Handler {
 
 		// Group
 		r.Get("/group/{id}", handlers.GetGroup)
-		r.Get("/group/{id}/users", handlers.GetAllMembersInGroup)
-		r.Get("/group/{id}/events", handlers.GetAllEventsForGroup)
+		r.Get("/group/{id}/user", handlers.GetAllMembersInGroup)
+		r.Get("/group/{id}/event", handlers.GetAllEventsForGroup)
 
 		r.Post("/group", handlers.CreateGroup)
-		r.Post("group/{id}/users/{user_id}", handlers.AddUserToGroup)
+		r.Post("group/{id}/user/{user_id}", handlers.AddUserToGroup)
 
-		r.Delete("/group/{id}/users/{user_id}", handlers.RemoveUserFromGroup)
+		r.Patch("/group/{id}/name", handlers.UpdateGroupName)
+
+		r.Delete("/group/{id}/user/{user_id}", handlers.RemoveUserFromGroup)
 		r.Delete("/group/{id}", handlers.DeleteGroup)
 
 		// Event
@@ -42,15 +45,16 @@ func RegisterRoutes() http.Handler {
 
 		r.Post("/event", handlers.CreateEvent)
 
+		r.Patch("/event/{id}/name", handlers.UpdateEventName)
+		r.Patch("/event/{id}/description", handlers.UpdateEventDescription)
+		r.Patch("/event/{id}/start", handlers.UpdateEventStartTime)
+		r.Patch("/event/{id}/end", handlers.UpdateEventEndTime)
+
 		r.Delete("/event/{id}", handlers.DeleteEvent)
 
-		// Endpoint accessible only to group admins
-		//r.With(middleware.RoleMiddleware("group_admin")).Get("/admin/dashboard", handlers.AdminDashboard)
-
-		// stuff like get ALL <any>
-
-		// Endpoint accessible only to super admins
-		//r.With(middleware.RoleMiddleware("superadmin")).Get("/superadmin/settings", handlers.SuperAdminSettings)
+		// SA endpoints
+		r.With(middleware.RoleMiddleware(models.SuperAdmin)).Patch("/group/{id}/admin/add/{user_id}", handlers.AddGroupAdmin)
+		r.With(middleware.RoleMiddleware(models.SuperAdmin)).Patch("/group/{id}/admin/remove/{user_id}", handlers.RemoveGroupAdmin)
 	})
 
 	return r

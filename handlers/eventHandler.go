@@ -7,6 +7,7 @@ import (
 	"nest/utils"
 	"net/http"
 	"strconv"
+	"time"
 
 	"github.com/go-chi/chi/v5"
 )
@@ -61,7 +62,7 @@ func DeleteEvent(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if !utils.IsGroupOwnerOrSA(r, eventID) {
+	if !utils.IsGroupAdminOrSA(r, eventID) {
 		http.Error(w, "You do not have access to this resource", http.StatusForbidden)
 		return
 	}
@@ -119,4 +120,126 @@ func GetAllEventsForGroup(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(events)
 }
 
-// TODO UPDATE Event logic
+func UpdateEventName(w http.ResponseWriter, r *http.Request) {
+	idStr := chi.URLParam(r, "id")
+	eventID, err := strconv.Atoi(idStr)
+	if err != nil {
+		http.Error(w, "Invalid ID", http.StatusBadRequest)
+		return
+	}
+
+	var payload struct {
+		EventName string `json:"event_name"`
+	}
+	err = json.NewDecoder(r.Body).Decode(&payload)
+	if err != nil || payload.EventName == "" {
+		http.Error(w, "Invalid request payload", http.StatusBadRequest)
+		return
+	}
+
+	if !utils.IsEventCreatorOrGroupAdminOrSA(r, eventID) {
+		http.Error(w, "You do not have access to this resource", http.StatusForbidden)
+		return
+	}
+
+	err = db.UpdateEventName(r.Context(), eventID, payload.EventName)
+	if err != nil {
+		http.Error(w, "Failed to update event", http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+}
+
+func UpdateEventDescription(w http.ResponseWriter, r *http.Request) {
+	idStr := chi.URLParam(r, "id")
+	eventID, err := strconv.Atoi(idStr)
+	if err != nil {
+		http.Error(w, "Invalid ID", http.StatusBadRequest)
+		return
+	}
+
+	var payload struct {
+		EventDescription string `json:"event_description"`
+	}
+	err = json.NewDecoder(r.Body).Decode(&payload)
+	if err != nil || payload.EventDescription == "" {
+		http.Error(w, "Invalid request payload", http.StatusBadRequest)
+		return
+	}
+
+	if !utils.IsEventCreatorOrGroupAdminOrSA(r, eventID) {
+		http.Error(w, "You do not have access to this resource", http.StatusForbidden)
+		return
+	}
+
+	err = db.UpdateEventDescription(r.Context(), eventID, payload.EventDescription)
+	if err != nil {
+		http.Error(w, "Failed to update event", http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+}
+
+func UpdateEventStartTime(w http.ResponseWriter, r *http.Request) {
+	idStr := chi.URLParam(r, "id")
+	eventID, err := strconv.Atoi(idStr)
+	if err != nil {
+		http.Error(w, "Invalid ID", http.StatusBadRequest)
+		return
+	}
+
+	var payload struct {
+		EventStartTime time.Time `json:"event_start_time"`
+	}
+	err = json.NewDecoder(r.Body).Decode(&payload)
+	if err != nil {
+		http.Error(w, "Invalid request payload", http.StatusBadRequest)
+		return
+	}
+
+	if !utils.IsEventCreatorOrGroupAdminOrSA(r, eventID) {
+		http.Error(w, "You do not have access to this resource", http.StatusForbidden)
+		return
+	}
+
+	err = db.UpdateEventStartTime(r.Context(), eventID, payload.EventStartTime)
+	if err != nil {
+		http.Error(w, "Failed to update event", http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+}
+
+func UpdateEventEndTime(w http.ResponseWriter, r *http.Request) {
+	idStr := chi.URLParam(r, "id")
+	eventID, err := strconv.Atoi(idStr)
+	if err != nil {
+		http.Error(w, "Invalid ID", http.StatusBadRequest)
+		return
+	}
+
+	var payload struct {
+		EventEndTime time.Time `json:"event_end_time"`
+	}
+	err = json.NewDecoder(r.Body).Decode(&payload)
+	if err != nil {
+		http.Error(w, "Invalid request payload", http.StatusBadRequest)
+		return
+	}
+
+	if !utils.IsEventCreatorOrGroupAdminOrSA(r, eventID) {
+		http.Error(w, "You do not have access to this resource", http.StatusForbidden)
+		return
+	}
+
+	err = db.UpdateEventEndTime(r.Context(), eventID, payload.EventEndTime)
+	if err != nil {
+		http.Error(w, "Failed to update event", http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+}

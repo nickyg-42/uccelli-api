@@ -70,7 +70,6 @@ func UpdateUserEmail(w http.ResponseWriter, r *http.Request) {
 	var payload struct {
 		Email string `json:"email"`
 	}
-
 	err = json.NewDecoder(r.Body).Decode(&payload)
 	if err != nil || payload.Email == "" {
 		http.Error(w, "Invalid request payload", http.StatusBadRequest)
@@ -102,7 +101,6 @@ func UpdateUserFirstName(w http.ResponseWriter, r *http.Request) {
 	var payload struct {
 		FirstName string `json:"first_name"`
 	}
-
 	err = json.NewDecoder(r.Body).Decode(&payload)
 	if err != nil || payload.FirstName == "" {
 		http.Error(w, "Invalid request payload", http.StatusBadRequest)
@@ -134,7 +132,6 @@ func UpdateUserLastName(w http.ResponseWriter, r *http.Request) {
 	var payload struct {
 		LastName string `json:"last_name"`
 	}
-
 	err = json.NewDecoder(r.Body).Decode(&payload)
 	if err != nil || payload.LastName == "" {
 		http.Error(w, "Invalid request payload", http.StatusBadRequest)
