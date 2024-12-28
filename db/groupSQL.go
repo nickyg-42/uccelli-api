@@ -52,7 +52,7 @@ func GetGroupByID(ctx context.Context, groupID int) (*models.Group, error) {
 	return &group, nil
 }
 
-func AddUserToGroup(ctx context.Context, userID, groupID int, roleInGroup string) error {
+func AddUserToGroup(ctx context.Context, userID, groupID int, roleInGroup models.Role) error {
 	// validate user exists
 	_, err := GetUserByID(ctx, userID)
 	if err != nil {
@@ -103,16 +103,22 @@ func GetAllGroupsForUser(ctx context.Context, userID int) ([]models.Group, error
 
 	for rows.Next() {
 		var group models.Group
-		err := rows.Scan(&group.ID, &group.Name, &group.Owner, &group.CreatedBy, &group.CreatedAt)
+		err := rows.Scan(
+			&group.ID,
+			&group.Name,
+			&group.Owner,
+			&group.CreatedBy,
+			&group.CreatedAt,
+		)
 		if err != nil {
-			return nil, fmt.Errorf("failed to scan row: %w", err)
+			return nil, fmt.Errorf("failed to scan group row: %w", err)
 		}
 
 		groups = append(groups, group)
 	}
 
 	if err := rows.Err(); err != nil {
-		return nil, fmt.Errorf("error iterating rows: %w", err)
+		return nil, fmt.Errorf("error iterating group rows: %w", err)
 	}
 
 	return groups, nil

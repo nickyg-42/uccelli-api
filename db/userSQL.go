@@ -86,3 +86,59 @@ func DeleteUser(ctx context.Context, userID int) error {
 
 	return nil
 }
+
+func UpdateUserPassword(ctx context.Context, userID int, hashedPassword string) error {
+	query := `
+		UPDATE users
+		SET password = $1
+		WHERE user_id = $2
+	`
+	_, err := Pool.Exec(ctx, query, hashedPassword, userID)
+	if err != nil {
+		return fmt.Errorf("failed to update user password: %w", err)
+	}
+
+	return nil
+}
+
+func UpdateUserFirstName(ctx context.Context, userID int, firstName string) error {
+	query := `
+		UPDATE users
+		SET first_name = $1
+		WHERE user_id = $2
+	`
+	_, err := Pool.Exec(ctx, query, firstName, userID)
+	if err != nil {
+		return fmt.Errorf("failed to update user first name: %w", err)
+	}
+
+	return nil
+}
+
+func UpdateUserLastName(ctx context.Context, userID int, lastName string) error {
+	query := `
+		UPDATE users
+		SET last_name = $1
+		WHERE user_id = $2
+	`
+	_, err := Pool.Exec(ctx, query, lastName, userID)
+	if err != nil {
+		return fmt.Errorf("failed to update user last name: %w", err)
+	}
+
+	return nil
+}
+
+func UpdateUserEmail(ctx context.Context, userID int, email string) error {
+	query := `
+		UPDATE users
+		SET email = $1
+		WHERE user_id = $2
+	`
+	_, err := Pool.Exec(ctx, query, email, userID)
+	if err != nil {
+		return fmt.Errorf("failed to update user email: %w", err)
+	}
+
+	return nil
+}

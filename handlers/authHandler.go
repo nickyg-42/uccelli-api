@@ -58,17 +58,7 @@ func Register(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusCreated)
-	json.NewEncoder(w).Encode(map[string]interface{}{
-		"message": "User created successfully",
-		"user": map[string]interface{}{
-			"id":         createdUser.ID,
-			"first_name": createdUser.FirstName,
-			"last_name":  createdUser.LastName,
-			"email":      createdUser.Email,
-			"username":   createdUser.Username,
-			"created_at": createdUser.CreatedAt,
-		},
-	})
+	json.NewEncoder(w).Encode(createdUser)
 }
 
 func Login(w http.ResponseWriter, r *http.Request) {

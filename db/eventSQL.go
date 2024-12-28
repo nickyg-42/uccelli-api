@@ -1,27 +1,127 @@
 package db
 
-// 1. Fetch all events for a group:
+import (
+	"context"
+	"fmt"
+	"nest/models"
+)
 
-// SELECT *
-// FROM events
-// WHERE group_id = 123;
+func FetchAllEventsForGroup(ctx context.Context, groupID int) ([]models.Event, error) {
+	query := `
+		SELECT id, group_id, created_by, name, description, start_time, end_time, created_at
+		FROM events
+		WHERE group_id = $1
+	`
 
-// 2. Fetch all events created by a specific user:
+	rows, err := Pool.Query(ctx, query, groupID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch events for group %d: %w", groupID, err)
+	}
+	defer rows.Close()
 
-// SELECT *
-// FROM events
-// WHERE created_by = 456;
+	var events []models.Event
 
-// 3. Fetch all events for a group along with creator details:
+	for rows.Next() {
+		var event models.Event
+		err = rows.Scan(
+			&event.ID,
+			&event.GroupID,
+			&event.Name,
+			&event.Description,
+			&event.StartTime,
+			&event.EndTime,
+			&event.CreatedBy,
+			&event.CreatedAt,
+		)
+		if err != nil {
+			return nil, fmt.Errorf("failed to scan event row: %w", err)
+		}
+		events = append(events, event)
+	}
 
-// SELECT e.*, u.username
-// FROM events e
-// JOIN users u ON e.created_by = u.id
-// WHERE e.group_id = 123;
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("error iterating event rows: %w", err)
+	}
 
-// 4. Fetch all groups a user has created events for:
+	return events, nil
+}
 
-// SELECT DISTINCT g.*
-// FROM groups g
-// JOIN events e ON g.group_id = e.group_id
-// WHERE e.created_by = 456;
+func FetchAllEventsByUser(ctx context.Context, userID int) ([]models.Event, error) {
+	query := `
+		SELECT id, group_id, created_by, name, description, start_time, end_time, created_at
+		FROM events
+		WHERE created_by = $1
+	`
+
+	rows, err := Pool.Query(ctx, query, userID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch events for user %d: %w", userID, err)
+	}
+	defer rows.Close()
+
+	var events []models.Event
+
+	for rows.Next() {
+		var event models.Event
+		err = rows.Scan(
+			&event.ID,
+			&event.GroupID,
+			&event.Name,
+			&event.Description,
+			&event.StartTime,
+			&event.EndTime,
+			&event.CreatedBy,
+			&event.CreatedAt,
+		)
+		if err != nil {
+			return nil, fmt.Errorf("failed to scan event row: %w", err)
+		}
+		events = append(events, event)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("error iterating event rows: %w", err)
+	}
+
+	return events, nil
+}
+
+func FetchAllEventsByGroup(ctx context.Context, groupID int) ([]models.Event, error) {
+	query := `
+		SELECT id, group_id, created_by, name, description, start_time, end_time, created_at
+		FROM events
+		WHERE group_id = $1
+	`
+
+	rows, err := Pool.Query(ctx, query, groupID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch events for group %d: %w", groupID, err)
+	}
+	defer rows.Close()
+
+	var events []models.Event
+
+	for rows.Next() {
+		var event models.Event
+		err = rows.Scan(
+			&event.ID,
+			&event.GroupID,
+			&event.Name,
+			&event.Description,
+			&event.StartTime,
+			&event.EndTime,
+			&event.CreatedBy,
+			&event.CreatedAt,
+		)
+		if err != nil {
+			return nil, fmt.Errorf("failed to scan event row: %w", err)
+		}
+		events = append(events, event)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("error iterating event rows: %w", err)
+	}
+
+	return events, nil
+}
