@@ -176,6 +176,25 @@ func IsUserGroupAdmin(ctx context.Context, userID, groupID int) (bool, error) {
 	return true, nil
 }
 
+func IsUserGroupMember(ctx context.Context, userID, groupID int) (bool, error) {
+	query := `
+		SELECT 1
+		FROM group_memberships
+		WHERE group_id = $2 AND user_id = $1;
+	`
+	var result int
+
+	err := Pool.QueryRow(ctx, query, userID, groupID).Scan(&result)
+
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return false, nil
+		}
+		return false, fmt.Errorf("query error: %w", err)
+	}
+	return true, nil
+}
+
 func RemoveUserFromGroup(ctx context.Context, userID, groupID int) error {
 	query := `
 		DELETE FROM group_memberships

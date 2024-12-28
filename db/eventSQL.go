@@ -2,51 +2,65 @@ package db
 
 import (
 	"context"
+	"database/sql"
+	"errors"
 	"fmt"
 	"nest/models"
 )
 
-func FetchAllEventsForGroup(ctx context.Context, groupID int) ([]models.Event, error) {
+func CreateEvent(ctx context.Context, event *models.Event) (*models.Event, error) {
 	query := `
-		SELECT id, group_id, created_by, name, description, start_time, end_time, created_at
-		FROM events
-		WHERE group_id = $1
+		INSERT INTO events (group_id, created_by, name, description, start_time, end_time)
+		VALUES ($1, $2)
+		RETURNING id, created_at
 	`
 
-	rows, err := Pool.Query(ctx, query, groupID)
+	err := Pool.QueryRow(
+		ctx,
+		query,
+		event.GroupID,
+		event.CreatedBy,
+		event.Name,
+		event.Description,
+		event.StartTime,
+		event.EndTime,
+	).Scan(&event.ID, &event.CreatedAt)
+
 	if err != nil {
-		return nil, fmt.Errorf("failed to fetch events for group %d: %w", groupID, err)
-	}
-	defer rows.Close()
-
-	var events []models.Event
-
-	for rows.Next() {
-		var event models.Event
-		err = rows.Scan(
-			&event.ID,
-			&event.GroupID,
-			&event.Name,
-			&event.Description,
-			&event.StartTime,
-			&event.EndTime,
-			&event.CreatedBy,
-			&event.CreatedAt,
-		)
-		if err != nil {
-			return nil, fmt.Errorf("failed to scan event row: %w", err)
-		}
-		events = append(events, event)
+		return nil, fmt.Errorf("failed to create event: %w", err)
 	}
 
-	if err := rows.Err(); err != nil {
-		return nil, fmt.Errorf("error iterating event rows: %w", err)
-	}
-
-	return events, nil
+	return event, nil
 }
 
-func FetchAllEventsByUser(ctx context.Context, userID int) ([]models.Event, error) {
+func GetEventByID(ctx context.Context, eventID int) (*models.Event, error) {
+	var event models.Event
+	query := `
+        SELECT id, group_id, created_by, name, description, start_time, end_time, created_at
+        FROM events 
+        WHERE id = $1
+    `
+	err := Pool.QueryRow(ctx, query, eventID).Scan(
+		&event.ID,
+		&event.GroupID,
+		&event.CreatedBy,
+		&event.Name,
+		&event.Description,
+		&event.StartTime,
+		&event.EndTime,
+		&event.CreatedAt,
+	)
+
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return nil, errors.New("event not found")
+		}
+		return nil, fmt.Errorf("query error: %w", err)
+	}
+	return &event, nil
+}
+
+func GetAllEventsByUser(ctx context.Context, userID int) ([]models.Event, error) {
 	query := `
 		SELECT id, group_id, created_by, name, description, start_time, end_time, created_at
 		FROM events
@@ -55,7 +69,7 @@ func FetchAllEventsByUser(ctx context.Context, userID int) ([]models.Event, erro
 
 	rows, err := Pool.Query(ctx, query, userID)
 	if err != nil {
-		return nil, fmt.Errorf("failed to fetch events for user %d: %w", userID, err)
+		return nil, fmt.Errorf("failed to get events for user %d: %w", userID, err)
 	}
 	defer rows.Close()
 
@@ -86,7 +100,7 @@ func FetchAllEventsByUser(ctx context.Context, userID int) ([]models.Event, erro
 	return events, nil
 }
 
-func FetchAllEventsByGroup(ctx context.Context, groupID int) ([]models.Event, error) {
+func GetAllEventsByGroup(ctx context.Context, groupID int) ([]models.Event, error) {
 	query := `
 		SELECT id, group_id, created_by, name, description, start_time, end_time, created_at
 		FROM events
@@ -95,7 +109,7 @@ func FetchAllEventsByGroup(ctx context.Context, groupID int) ([]models.Event, er
 
 	rows, err := Pool.Query(ctx, query, groupID)
 	if err != nil {
-		return nil, fmt.Errorf("failed to fetch events for group %d: %w", groupID, err)
+		return nil, fmt.Errorf("failed to get events for group %d: %w", groupID, err)
 	}
 	defer rows.Close()
 

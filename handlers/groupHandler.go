@@ -107,3 +107,56 @@ func AddUserToGroup(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(http.StatusOK)
 }
+
+func RemoveUserFromGroup(w http.ResponseWriter, r *http.Request) {
+	idStr := chi.URLParam(r, "id")
+	groupID, err := strconv.Atoi(idStr)
+	if err != nil {
+		http.Error(w, "Invalid ID", http.StatusBadRequest)
+		return
+	}
+
+	idStr = chi.URLParam(r, "user_id")
+	userID, err := strconv.Atoi(idStr)
+	if err != nil {
+		http.Error(w, "Invalid ID", http.StatusBadRequest)
+		return
+	}
+
+	if !utils.IsGroupOwnerOrSA(r, groupID) {
+		http.Error(w, "You do not have access to this resource", http.StatusForbidden)
+		return
+	}
+
+	err = db.RemoveUserFromGroup(r.Context(), userID, groupID)
+	if err != nil {
+		http.Error(w, "Failed to remove user from group", http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+}
+
+func GetAllMembersInGroup(w http.ResponseWriter, r *http.Request) {
+	idStr := chi.URLParam(r, "id")
+	groupID, err := strconv.Atoi(idStr)
+	if err != nil {
+		http.Error(w, "Invalid ID", http.StatusBadRequest)
+		return
+	}
+
+	if !utils.IsGroupOwnerOrSA(r, groupID) {
+		http.Error(w, "You do not have access to this resource", http.StatusForbidden)
+		return
+	}
+
+	users, err := db.GetAllMembersForGroup(r.Context(), groupID)
+	if err != nil {
+		http.Error(w, "Failed to remove user from group", http.StatusInternalServerError)
+		return
+	}
+
+	json.NewEncoder(w).Encode(users)
+}
+
+// TODO update group logic

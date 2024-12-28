@@ -49,3 +49,42 @@ func IsGroupOwnerOrSA(r *http.Request, groupID int) bool {
 
 	return true
 }
+
+func IsEventCreatorOrGroupMemberOrSA(r *http.Request, eventID int) bool {
+	role := r.Context().Value("role").(string)
+	authenticatedUserID := r.Context().Value("user_id").(int)
+
+	event, err := db.GetEventByID(r.Context(), eventID)
+	if err != nil {
+		return false
+	}
+
+	isGroupMember, err := db.IsUserGroupMember(r.Context(), authenticatedUserID, int(event.GroupID))
+	if err != nil {
+		return false
+	}
+
+	// If not group member, event creator, or SA, deny
+	if role != string(models.SuperAdmin) && !isGroupMember && event.CreatedBy.ID != int64(authenticatedUserID) {
+		return false
+	}
+
+	return true
+}
+
+func IsGroupMemberOrSA(r *http.Request, groupID int) bool {
+	role := r.Context().Value("role").(string)
+	authenticatedUserID := r.Context().Value("user_id").(int)
+
+	isGroupMember, err := db.IsUserGroupMember(r.Context(), authenticatedUserID, groupID)
+	if err != nil {
+		return false
+	}
+
+	// If not group member or SA, deny
+	if role != string(models.SuperAdmin) && !isGroupMember {
+		return false
+	}
+
+	return true
+}
