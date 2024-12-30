@@ -71,7 +71,7 @@ func UpdateUserEmail(w http.ResponseWriter, r *http.Request) {
 		Email string `json:"email"`
 	}
 	err = json.NewDecoder(r.Body).Decode(&payload)
-	if err != nil || payload.Email == "" {
+	if err != nil || !utils.ValidateEmail(payload.Email) {
 		http.Error(w, "Invalid request payload", http.StatusBadRequest)
 		return
 	}
@@ -102,7 +102,7 @@ func UpdateUserFirstName(w http.ResponseWriter, r *http.Request) {
 		FirstName string `json:"first_name"`
 	}
 	err = json.NewDecoder(r.Body).Decode(&payload)
-	if err != nil || payload.FirstName == "" {
+	if err != nil || !utils.ValidateName(payload.FirstName) {
 		http.Error(w, "Invalid request payload", http.StatusBadRequest)
 		return
 	}
@@ -133,7 +133,7 @@ func UpdateUserLastName(w http.ResponseWriter, r *http.Request) {
 		LastName string `json:"last_name"`
 	}
 	err = json.NewDecoder(r.Body).Decode(&payload)
-	if err != nil || payload.LastName == "" {
+	if err != nil || !utils.ValidateName(payload.LastName) {
 		http.Error(w, "Invalid request payload", http.StatusBadRequest)
 		return
 	}

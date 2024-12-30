@@ -34,6 +34,24 @@ func CreateEvent(ctx context.Context, event *models.Event) (*models.Event, error
 	return event, nil
 }
 
+func DeleteEvent(ctx context.Context, eventID int) error {
+	query := `
+		DELETE FROM events
+		WHERE id = $1;
+	`
+	_, err := Pool.Exec(
+		ctx,
+		query,
+		eventID,
+	)
+
+	if err != nil {
+		return fmt.Errorf("failed to delete event: %w", err)
+	}
+
+	return nil
+}
+
 func GetEventByID(ctx context.Context, eventID int) (*models.Event, error) {
 	var event models.Event
 	query := `

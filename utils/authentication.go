@@ -4,29 +4,12 @@ import (
 	"nest/db"
 	"nest/models"
 	"net/http"
-	"strconv"
-	"time"
-
-	"github.com/golang-jwt/jwt/v4"
 )
-
-var jwtKey = []byte("your_secret_key")
-
-func GenerateToken(userID int) (string, error) {
-	claims := &jwt.RegisteredClaims{
-		Subject:   strconv.Itoa(userID),
-		ExpiresAt: jwt.NewNumericDate(time.Now().Add(24 * time.Hour)),
-	}
-
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	return token.SignedString(jwtKey)
-}
 
 func IsSelfOrSA(r *http.Request, userID int) bool {
 	role := r.Context().Value("role").(string)
 	authenticatedUserID := r.Context().Value("user_id").(int)
 
-	// If not self or SA, deny
 	if userID != authenticatedUserID && role != string(models.SuperAdmin) {
 		return false
 	}
@@ -48,7 +31,6 @@ func IsGroupAdminOrSA(r *http.Request, groupID int) bool {
 		return false
 	}
 
-	// If not group owner or SA, deny
 	if role != string(models.SuperAdmin) && !isGroupAdmin {
 		return false
 	}
@@ -70,7 +52,6 @@ func IsEventCreatorOrGroupMemberOrSA(r *http.Request, eventID int) bool {
 		return false
 	}
 
-	// If not group member, event creator, or SA, deny
 	if role != string(models.SuperAdmin) && !isGroupMember && event.CreatedByID != int64(authenticatedUserID) {
 		return false
 	}
@@ -92,7 +73,6 @@ func IsEventCreatorOrGroupAdminOrSA(r *http.Request, eventID int) bool {
 		return false
 	}
 
-	// If not group admin, event creator, or SA, deny
 	if role != string(models.SuperAdmin) && !isGroupAdmin && event.CreatedByID != int64(authenticatedUserID) {
 		return false
 	}
@@ -109,7 +89,6 @@ func IsGroupMemberOrSA(r *http.Request, groupID int) bool {
 		return false
 	}
 
-	// If not group member or SA, deny
 	if role != string(models.SuperAdmin) && !isGroupMember {
 		return false
 	}

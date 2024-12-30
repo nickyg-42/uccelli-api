@@ -45,6 +45,25 @@ func GetUserByUsername(ctx context.Context, username string) (*models.User, erro
 	return &user, nil
 }
 
+func IsUsernameTaken(ctx context.Context, username string) (bool, error) {
+	query := `
+		SELECT 1
+		FROM users
+		WHERE username = $1
+	`
+	var result int
+
+	err := Pool.QueryRow(ctx, query, username).Scan(&result)
+
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return false, nil
+		}
+		return false, fmt.Errorf("query error: %w", err)
+	}
+	return true, nil
+}
+
 func CreateUser(ctx context.Context, user *models.User) (*models.User, error) {
 	query := `
 		INSERT INTO users (first_name, last_name, username, email, password_hash)

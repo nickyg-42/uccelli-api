@@ -36,17 +36,25 @@ func GetEvent(w http.ResponseWriter, r *http.Request) {
 
 func CreateEvent(w http.ResponseWriter, r *http.Request) {
 	var event models.Event
-	err := json.NewDecoder(r.Body).Decode(&event)
-	if err != nil {
+
+	if err := json.NewDecoder(r.Body).Decode(&event); err != nil {
 		http.Error(w, "Invalid request payload", http.StatusBadRequest)
 		return
 	}
 
-	// TODO Validation
+	if err := utils.ValidateNewEvent(event); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	if !utils.IsGroupMemberOrSA(r, int(event.GroupID)) {
+		http.Error(w, "You do not have access to this resource", http.StatusForbidden)
+		return
+	}
 
 	createdEvent, err := db.CreateEvent(r.Context(), &event)
 	if err != nil {
-		http.Error(w, "Failed to create group", http.StatusInternalServerError)
+		http.Error(w, "Failed to create event", http.StatusInternalServerError)
 		return
 	}
 
@@ -62,12 +70,12 @@ func DeleteEvent(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if !utils.IsGroupAdminOrSA(r, eventID) {
+	if !utils.IsEventCreatorOrGroupAdminOrSA(r, eventID) {
 		http.Error(w, "You do not have access to this resource", http.StatusForbidden)
 		return
 	}
 
-	err = db.DeleteGroup(r.Context(), eventID)
+	err = db.DeleteEvent(r.Context(), eventID)
 	if err != nil {
 		http.Error(w, "Event not found or could not be deleted", http.StatusInternalServerError)
 		return
@@ -194,7 +202,7 @@ func UpdateEventStartTime(w http.ResponseWriter, r *http.Request) {
 		EventStartTime time.Time `json:"event_start_time"`
 	}
 	err = json.NewDecoder(r.Body).Decode(&payload)
-	if err != nil {
+	if err != nil || payload.EventStartTime.IsZero() {
 		http.Error(w, "Invalid request payload", http.StatusBadRequest)
 		return
 	}
@@ -225,7 +233,7 @@ func UpdateEventEndTime(w http.ResponseWriter, r *http.Request) {
 		EventEndTime time.Time `json:"event_end_time"`
 	}
 	err = json.NewDecoder(r.Body).Decode(&payload)
-	if err != nil {
+	if err != nil || payload.EventEndTime.IsZero() {
 		http.Error(w, "Invalid request payload", http.StatusBadRequest)
 		return
 	}

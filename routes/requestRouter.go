@@ -15,7 +15,7 @@ func RegisterRoutes() http.Handler {
 	r.Post("/login", handlers.Login)
 	r.Post("/register", handlers.Register)
 
-	// Authenticated Routes
+	// JWT required routes
 	r.With(middleware.JWTAuthMiddleware).Group(func(r chi.Router) {
 		// User
 		r.Get("/user/{id}", handlers.GetUser)

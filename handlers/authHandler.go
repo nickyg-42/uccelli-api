@@ -5,6 +5,7 @@ import (
 	"log"
 	"nest/db"
 	"nest/models"
+	"nest/utils"
 	"net/http"
 	"os"
 	"time"
@@ -14,23 +15,15 @@ import (
 )
 
 func Register(w http.ResponseWriter, r *http.Request) {
-	var userDto struct {
-		FirstName string `json:"first_name"`
-		LastName  string `json:"last_name"`
-		Email     string `json:"email"`
-		Username  string `json:"username"`
-		Password  string `json:"password"`
-	}
+	var userDto models.UserDTO
 
 	if err := json.NewDecoder(r.Body).Decode(&userDto); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
-	// Validate FIXME
-	// Check if email or username exists also
-	if userDto.FirstName == "" || userDto.LastName == "" || userDto.Email == "" || userDto.Username == "" || userDto.Password == "" {
-		http.Error(w, "All fields are required", http.StatusBadRequest)
+	if err := utils.ValidateNewUser(r, userDto); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 

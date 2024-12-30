@@ -19,7 +19,7 @@ func GetGroup(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if !utils.IsSelfOrSA(r, id) {
+	if !utils.IsGroupMemberOrSA(r, id) {
 		http.Error(w, "You do not have access to this resource", http.StatusForbidden)
 		return
 	}
@@ -41,7 +41,9 @@ func CreateGroup(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// TODO Validation
+	if err := utils.ValidateNewGroup(group); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+	}
 
 	createdGroup, err := db.CreateGroup(r.Context(), &group)
 	if err != nil {
@@ -90,17 +92,17 @@ func AddUserToGroup(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if !utils.IsGroupAdminOrSA(r, groupID) {
+		http.Error(w, "You do not have access to this resource", http.StatusForbidden)
+		return
+	}
+
 	var payload struct {
 		RoleInGroup models.Role `json:"role_in_group"`
 	}
 	err = json.NewDecoder(r.Body).Decode(&payload)
 	if err != nil || payload.RoleInGroup == "" {
 		http.Error(w, "Invalid request payload", http.StatusBadRequest)
-		return
-	}
-
-	if !utils.IsGroupAdminOrSA(r, groupID) {
-		http.Error(w, "You do not have access to this resource", http.StatusForbidden)
 		return
 	}
 
@@ -210,11 +212,6 @@ func AddGroupAdmin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// if !utils.IsSA(r) {
-	// 	http.Error(w, "You do not have access to this resource", http.StatusForbidden)
-	// 	return
-	// }
-
 	err = db.AddGroupAdmin(r.Context(), groupID, userID)
 	if err != nil {
 		http.Error(w, "Failed to add group admin", http.StatusInternalServerError)
@@ -238,11 +235,6 @@ func RemoveGroupAdmin(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Invalid ID", http.StatusBadRequest)
 		return
 	}
-
-	// if !utils.IsSA(r) {
-	// 	http.Error(w, "You do not have access to this resource", http.StatusForbidden)
-	// 	return
-	// }
 
 	err = db.RemoveGroupAdmin(r.Context(), groupID, userID)
 	if err != nil {

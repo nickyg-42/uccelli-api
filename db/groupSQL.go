@@ -106,9 +106,9 @@ func RemoveGroupMember(ctx context.Context, userID, groupID int) error {
 
 func GetAllGroupsForUser(ctx context.Context, userID int) ([]models.Group, error) {
 	query := `
-		SELECT g.group_id, g.group_name, g.created_by, g.created_at
+		SELECT g.id, g.group_name, g.created_by, g.created_at
 		FROM groups g
-		INNER JOIN group_memberships gm ON g.group_id = gm.group_id
+		INNER JOIN group_memberships gm ON g.id = gm.group_id
 		WHERE gm.user_id = $1
 	`
 
@@ -216,7 +216,7 @@ func IsUserGroupMember(ctx context.Context, userID, groupID int) (bool, error) {
 func DeleteGroup(ctx context.Context, groupID int) error {
 	query := `
 		DELETE FROM groups
-		WHERE group_id = $1;
+		WHERE id = $1;
 	`
 	_, err := Pool.Exec(
 		ctx,
@@ -235,7 +235,7 @@ func UpdateGroupName(ctx context.Context, groupID int, groupName string) error {
 	query := `
 		UPDATE groups
 		SET group_name = $1
-		WHERE group_id = $2;
+		WHERE id = $2;
 	`
 	_, err := Pool.Exec(
 		ctx,
