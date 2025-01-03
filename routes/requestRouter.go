@@ -12,8 +12,8 @@ import (
 func RegisterRoutes() http.Handler {
 	r := chi.NewRouter()
 
-	r.Post("/login", handlers.Login)
-	r.Post("/register", handlers.Register)
+	r.Post("/user/login", handlers.Login)
+	r.Post("/user/register", handlers.Register)
 
 	// JWT required routes
 	r.With(middleware.JWTAuthMiddleware).Group(func(r chi.Router) {
@@ -33,7 +33,7 @@ func RegisterRoutes() http.Handler {
 		r.Get("/group/{id}/event", handlers.GetAllEventsForGroup)
 
 		r.Post("/group", handlers.CreateGroup)
-		r.Post("group/{id}/user/{user_id}", handlers.AddUserToGroup)
+		r.Post("/group/{id}/user/{user_id}", handlers.AddUserToGroup)
 
 		r.Patch("/group/{id}/name", handlers.UpdateGroupName)
 
