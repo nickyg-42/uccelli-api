@@ -12,6 +12,8 @@ import (
 func RegisterRoutes() http.Handler {
 	r := chi.NewRouter()
 
+	r.Use(middleware.CORSMiddleware)
+
 	r.Post("/user/login", handlers.Login)
 	r.Post("/user/register", handlers.Register)
 
@@ -30,14 +32,20 @@ func RegisterRoutes() http.Handler {
 		// Group
 		r.Get("/group/{id}", handlers.GetGroup)
 		r.Get("/group/{id}/user", handlers.GetAllMembersInGroup)
+		r.Get("/group/{id}/non-members", handlers.GetAllNonMembersInGroup)
+		r.Get("/group/{id}/non-admins", handlers.GetAllNonAdminMembersInGroup)
+		r.Get("/group/{id}/admins", handlers.GetAllAdminMembersInGroup)
 		r.Get("/group/{id}/event", handlers.GetAllEventsForGroup)
+		r.Get("/group/user/{id}", handlers.GetAllGroupsForUser)
 
 		r.Post("/group", handlers.CreateGroup)
 		r.Post("/group/{id}/user/{user_id}", handlers.AddUserToGroup)
+		r.Post("/group/join/{group_code}", handlers.JoinGroup)
 
 		r.Patch("/group/{id}/name", handlers.UpdateGroupName)
 
 		r.Delete("/group/{id}/user/{user_id}", handlers.RemoveUserFromGroup)
+		r.Delete("/group/{id}/user", handlers.LeaveGroup)
 		r.Delete("/group/{id}", handlers.DeleteGroup)
 
 		// Event
@@ -55,6 +63,8 @@ func RegisterRoutes() http.Handler {
 		// SA endpoints
 		r.With(middleware.RoleMiddleware(models.SuperAdmin)).Patch("/group/{id}/admin/add/{user_id}", handlers.AddGroupAdmin)
 		r.With(middleware.RoleMiddleware(models.SuperAdmin)).Patch("/group/{id}/admin/remove/{user_id}", handlers.RemoveGroupAdmin)
+
+		r.With(middleware.RoleMiddleware(models.SuperAdmin)).Get("/group/all", handlers.GetAllGroups)
 	})
 
 	return r

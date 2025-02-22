@@ -6,6 +6,8 @@ import (
 	"errors"
 	"fmt"
 	"nest/models"
+
+	"github.com/jackc/pgx/v4"
 )
 
 func GetUserByID(ctx context.Context, id int) (*models.User, error) {
@@ -56,7 +58,7 @@ func IsUsernameTaken(ctx context.Context, username string) (bool, error) {
 	err := Pool.QueryRow(ctx, query, username).Scan(&result)
 
 	if err != nil {
-		if err == sql.ErrNoRows {
+		if err == pgx.ErrNoRows {
 			return false, nil
 		}
 		return false, fmt.Errorf("query error: %w", err)

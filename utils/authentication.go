@@ -20,12 +20,17 @@ func IsSelfOrSA(r *http.Request, userID int) bool {
 func IsSA(r *http.Request) bool {
 	role := r.Context().Value("role").(string)
 
-	return role != string(models.SuperAdmin)
+	return role == string(models.SuperAdmin)
 }
 
 func IsGroupAdminOrSA(r *http.Request, groupID int) bool {
 	role := r.Context().Value("role").(string)
 	authenticatedUserID := r.Context().Value("user_id").(int)
+
+	if role == string(models.SuperAdmin) {
+		return true
+	}
+
 	isGroupAdmin, err := db.IsUserGroupAdmin(r.Context(), authenticatedUserID, groupID)
 	if err != nil {
 		return false

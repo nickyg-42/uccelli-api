@@ -19,11 +19,13 @@ func Register(w http.ResponseWriter, r *http.Request) {
 
 	if err := json.NewDecoder(r.Body).Decode(&userDto); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
+		log.Println("Error decoding request body:", err)
 		return
 	}
 
 	if err := utils.ValidateNewUser(r, userDto); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
+		log.Println("Error validating new user:", err)
 		return
 	}
 
@@ -32,6 +34,7 @@ func Register(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		log.Println("Error hashing password:", err)
 		http.Error(w, "Internal server error", http.StatusInternalServerError)
+		log.Println("Error generating password hash:", err)
 		return
 	}
 
@@ -47,6 +50,7 @@ func Register(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		log.Println("Error saving user:", err)
 		http.Error(w, "Internal server error", http.StatusInternalServerError)
+		log.Println("Error creating user:", err)
 		return
 	}
 
@@ -55,6 +59,8 @@ func Register(w http.ResponseWriter, r *http.Request) {
 }
 
 func Login(w http.ResponseWriter, r *http.Request) {
+	enableCors(&w)
+
 	var credentials struct {
 		Username string `json:"username"`
 		Password string `json:"password"`
@@ -62,18 +68,21 @@ func Login(w http.ResponseWriter, r *http.Request) {
 
 	if err := json.NewDecoder(r.Body).Decode(&credentials); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
+		log.Println("Error decoding request body:", err)
 		return
 	}
 
 	user, err := db.GetUserByUsername(r.Context(), credentials.Username)
 	if err != nil {
 		http.Error(w, "User not found", http.StatusUnauthorized)
+		log.Println("Error retrieving user by username:", err)
 		return
 	}
 
 	err = bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(credentials.Password))
 	if err != nil {
 		http.Error(w, "Invalid credentials", http.StatusUnauthorized)
+		log.Println("Error comparing password hash:", err)
 		return
 	}
 
@@ -88,6 +97,7 @@ func Login(w http.ResponseWriter, r *http.Request) {
 	tokenString, err := token.SignedString([]byte(os.Getenv("JWT_SECRET")))
 	if err != nil {
 		http.Error(w, "Error generating token", http.StatusInternalServerError)
+		log.Println("Error generating JWT token:", err)
 		return
 	}
 
@@ -95,4 +105,8 @@ func Login(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(map[string]string{
 		"token": tokenString,
 	})
+}
+
+func enableCors(w *http.ResponseWriter) {
+	(*w).Header().Set("Access-Control-Allow-Origin", "*")
 }

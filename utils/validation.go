@@ -83,7 +83,7 @@ func ValidateUsername(r *http.Request, username string) bool {
 		return false
 	}
 
-	return isTaken
+	return !isTaken
 }
 
 // At least one uppercase letter, one lowercase letter, one number, one special character, at least 8 characters long
@@ -113,7 +113,7 @@ func ValidatePassword(password string) bool {
 // **************************************
 // EVENT VALIDATION
 // **************************************
-func ValidateNewEvent(event models.Event) error {
+func ValidateNewEvent(event models.EventDTO) error {
 	if len(strings.TrimSpace(event.Name)) == 0 {
 		return errors.New("event name cannot be empty")
 	}
@@ -138,7 +138,7 @@ func ValidateNewEvent(event models.Event) error {
 // **************************************
 // GROUP VALIDATION
 // **************************************
-func ValidateNewGroup(group models.Group) error {
+func ValidateNewGroup(group models.GroupDTO) error {
 	if len(strings.TrimSpace(group.Name)) == 0 {
 		return errors.New("group name cannot be empty")
 	}

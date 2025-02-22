@@ -6,12 +6,14 @@ import (
 	"errors"
 	"fmt"
 	"nest/models"
+
+	"github.com/jackc/pgx/v4"
 )
 
 func CreateGroup(ctx context.Context, group *models.Group) (*models.Group, error) {
 	query := `
-		INSERT INTO groups (created_by, group_name)
-		VALUES ($1, $2)
+		INSERT INTO groups (created_by, group_name, code)
+		VALUES ($1, $2, $3)
 		RETURNING id, created_at
 	`
 
@@ -20,6 +22,7 @@ func CreateGroup(ctx context.Context, group *models.Group) (*models.Group, error
 		query,
 		group.CreatedByID,
 		group.Name,
+		group.Code,
 	).Scan(&group.ID, &group.CreatedAt)
 
 	if err != nil {
@@ -32,15 +35,40 @@ func CreateGroup(ctx context.Context, group *models.Group) (*models.Group, error
 func GetGroupByID(ctx context.Context, groupID int) (*models.Group, error) {
 	var group models.Group
 	query := `
-        SELECT id, created_by, created_at, group_name
+        SELECT id, created_by, created_at, group_name, code
         FROM groups 
         WHERE id = $1
     `
 	err := Pool.QueryRow(ctx, query, groupID).Scan(
 		&group.ID,
 		&group.CreatedByID,
-		&group.Name,
 		&group.CreatedAt,
+		&group.Name,
+		&group.Code,
+	)
+
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return nil, errors.New("group not found")
+		}
+		return nil, fmt.Errorf("query error: %w", err)
+	}
+	return &group, nil
+}
+
+func GetGroupByCode(ctx context.Context, groupCode string) (*models.Group, error) {
+	var group models.Group
+	query := `
+        SELECT id, created_by, created_at, group_name, code
+        FROM groups 
+        WHERE code = $1
+    `
+	err := Pool.QueryRow(ctx, query, groupCode).Scan(
+		&group.ID,
+		&group.CreatedByID,
+		&group.CreatedAt,
+		&group.Name,
+		&group.Code,
 	)
 
 	if err != nil {
@@ -106,7 +134,7 @@ func RemoveGroupMember(ctx context.Context, userID, groupID int) error {
 
 func GetAllGroupsForUser(ctx context.Context, userID int) ([]models.Group, error) {
 	query := `
-		SELECT g.id, g.group_name, g.created_by, g.created_at
+		SELECT g.id, g.group_name, g.created_by, g.created_at, g.code
 		FROM groups g
 		INNER JOIN group_memberships gm ON g.id = gm.group_id
 		WHERE gm.user_id = $1
@@ -127,6 +155,44 @@ func GetAllGroupsForUser(ctx context.Context, userID int) ([]models.Group, error
 			&group.Name,
 			&group.CreatedByID,
 			&group.CreatedAt,
+			&group.Code,
+		)
+		if err != nil {
+			return nil, fmt.Errorf("failed to scan group row: %w", err)
+		}
+
+		groups = append(groups, group)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("error iterating group rows: %w", err)
+	}
+
+	return groups, nil
+}
+
+func GetAllGroups(ctx context.Context) ([]models.Group, error) {
+	query := `
+		SELECT id, group_name, created_by, created_at, code
+		FROM groups
+	`
+
+	rows, err := Pool.Query(ctx, query)
+	if err != nil {
+		return nil, fmt.Errorf("failed to execute query: %w", err)
+	}
+	defer rows.Close()
+
+	var groups []models.Group
+
+	for rows.Next() {
+		var group models.Group
+		err := rows.Scan(
+			&group.ID,
+			&group.Name,
+			&group.CreatedByID,
+			&group.CreatedAt,
+			&group.Code,
 		)
 		if err != nil {
 			return nil, fmt.Errorf("failed to scan group row: %w", err)
@@ -144,7 +210,7 @@ func GetAllGroupsForUser(ctx context.Context, userID int) ([]models.Group, error
 
 func GetAllMembersForGroup(ctx context.Context, groupID int) ([]models.User, error) {
 	query := `
-		SELECT u.user_id, u.username, gm.role_in_group, gm.joined_at
+		SELECT u.user_id, u.username, u.email, u.first_name, u.last_name, u.role, u.created_at, gm.role_in_group, gm.joined_at
 		FROM users u
 		JOIN group_memberships gm ON u.user_id = gm.user_id
 		WHERE gm.group_id = $1;
@@ -161,6 +227,104 @@ func GetAllMembersForGroup(ctx context.Context, groupID int) ([]models.User, err
 	for rows.Next() {
 		var user models.User
 		err := rows.Scan(&user.ID, &user.FirstName, &user.LastName, &user.Email, &user.Role, &user.CreatedAt)
+		if err != nil {
+			return nil, fmt.Errorf("failed to scan row: %w", err)
+		}
+
+		users = append(users, user)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("error iterating rows: %w", err)
+	}
+
+	return users, nil
+}
+
+func GetAllNonMembersForGroup(ctx context.Context, groupID int) ([]models.User, error) {
+	query := `
+		SELECT u.id, u.username, u.email, u.first_name, u.last_name, u.role, u.created_at
+		FROM users u
+		LEFT JOIN group_memberships gm ON u.id = gm.user_id AND gm.group_id = $1
+		WHERE gm.user_id IS NULL;
+	`
+
+	rows, err := Pool.Query(ctx, query, groupID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to execute query: %w", err)
+	}
+	defer rows.Close()
+
+	var users []models.User
+
+	for rows.Next() {
+		var user models.User
+		err := rows.Scan(&user.ID, &user.Username, &user.Email, &user.FirstName, &user.LastName, &user.Role, &user.CreatedAt)
+		if err != nil {
+			return nil, fmt.Errorf("failed to scan row: %w", err)
+		}
+		users = append(users, user)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("error iterating rows: %w", err)
+	}
+
+	return users, nil
+}
+
+func GetAllNonAdminMembersForGroup(ctx context.Context, groupID int) ([]models.User, error) {
+	query := `
+		SELECT u.id, u.username, u.email, u.first_name, u.last_name, u.role, u.created_at
+		FROM users u
+		JOIN group_memberships gm ON u.id = gm.user_id
+		WHERE gm.group_id = $1 and gm.role_in_group = 'member';
+	`
+
+	rows, err := Pool.Query(ctx, query, groupID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to execute query: %w", err)
+	}
+	defer rows.Close()
+
+	var users []models.User
+
+	for rows.Next() {
+		var user models.User
+		err := rows.Scan(&user.ID, &user.Username, &user.Email, &user.FirstName, &user.LastName, &user.Role, &user.CreatedAt)
+		if err != nil {
+			return nil, fmt.Errorf("failed to scan row: %w", err)
+		}
+
+		users = append(users, user)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("error iterating rows: %w", err)
+	}
+
+	return users, nil
+}
+
+func GetAllAdminMembersForGroup(ctx context.Context, groupID int) ([]models.User, error) {
+	query := `
+		SELECT u.id, u.username, u.email, u.first_name, u.last_name, u.role, u.created_at
+		FROM users u
+		JOIN group_memberships gm ON u.id = gm.user_id
+		WHERE gm.group_id = $1 and gm.role_in_group != 'member';
+	`
+
+	rows, err := Pool.Query(ctx, query, groupID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to execute query: %w", err)
+	}
+	defer rows.Close()
+
+	var users []models.User
+
+	for rows.Next() {
+		var user models.User
+		err := rows.Scan(&user.ID, &user.Username, &user.Email, &user.FirstName, &user.LastName, &user.Role, &user.CreatedAt)
 		if err != nil {
 			return nil, fmt.Errorf("failed to scan row: %w", err)
 		}
@@ -205,7 +369,7 @@ func IsUserGroupMember(ctx context.Context, userID, groupID int) (bool, error) {
 	err := Pool.QueryRow(ctx, query, userID, groupID).Scan(&result)
 
 	if err != nil {
-		if err == sql.ErrNoRows {
+		if err == pgx.ErrNoRows {
 			return false, nil
 		}
 		return false, fmt.Errorf("query error: %w", err)

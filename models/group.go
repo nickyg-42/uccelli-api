@@ -7,4 +7,5 @@ type Group struct {
 	Name        string    `json:"name"`
 	CreatedByID int64     `json:"created_by_id"`
 	CreatedAt   time.Time `json:"created_at"`
+	Code        string    `json:"code"`
 }

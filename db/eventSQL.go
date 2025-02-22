@@ -12,7 +12,7 @@ import (
 func CreateEvent(ctx context.Context, event *models.Event) (*models.Event, error) {
 	query := `
 		INSERT INTO events (group_id, created_by, name, description, start_time, end_time)
-		VALUES ($1, $2)
+		VALUES ($1, $2, $3, $4, $5, $6)
 		RETURNING id, created_at
 	`
 
@@ -99,11 +99,11 @@ func GetAllEventsByUser(ctx context.Context, userID int) ([]models.Event, error)
 		err = rows.Scan(
 			&event.ID,
 			&event.GroupID,
+			&event.CreatedByID,
 			&event.Name,
 			&event.Description,
 			&event.StartTime,
 			&event.EndTime,
-			&event.CreatedByID,
 			&event.CreatedAt,
 		)
 		if err != nil {
@@ -139,11 +139,11 @@ func GetAllEventsByGroup(ctx context.Context, groupID int) ([]models.Event, erro
 		err = rows.Scan(
 			&event.ID,
 			&event.GroupID,
+			&event.CreatedByID,
 			&event.Name,
 			&event.Description,
 			&event.StartTime,
 			&event.EndTime,
-			&event.CreatedByID,
 			&event.CreatedAt,
 		)
 		if err != nil {
