@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"log"
 	"nest/db"
 	"nest/models"
 	"net/http"
@@ -75,6 +76,7 @@ func IsEventCreatorOrGroupAdminOrSA(r *http.Request, eventID int) bool {
 
 	isGroupAdmin, err := db.IsUserGroupAdmin(r.Context(), authenticatedUserID, int(event.GroupID))
 	if err != nil {
+		log.Println(err)
 		return false
 	}
 

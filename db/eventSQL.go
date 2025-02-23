@@ -2,11 +2,12 @@ package db
 
 import (
 	"context"
-	"database/sql"
 	"errors"
 	"fmt"
 	"nest/models"
 	"time"
+
+	"github.com/jackc/pgx/v4"
 )
 
 func CreateEvent(ctx context.Context, event *models.Event) (*models.Event, error) {
@@ -71,7 +72,7 @@ func GetEventByID(ctx context.Context, eventID int) (*models.Event, error) {
 	)
 
 	if err != nil {
-		if err == sql.ErrNoRows {
+		if err == pgx.ErrNoRows {
 			return nil, errors.New("event not found")
 		}
 		return nil, fmt.Errorf("query error: %w", err)

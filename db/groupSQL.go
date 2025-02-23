@@ -2,7 +2,6 @@ package db
 
 import (
 	"context"
-	"database/sql"
 	"errors"
 	"fmt"
 	"nest/models"
@@ -48,7 +47,7 @@ func GetGroupByID(ctx context.Context, groupID int) (*models.Group, error) {
 	)
 
 	if err != nil {
-		if err == sql.ErrNoRows {
+		if err == pgx.ErrNoRows {
 			return nil, errors.New("group not found")
 		}
 		return nil, fmt.Errorf("query error: %w", err)
@@ -72,7 +71,7 @@ func GetGroupByCode(ctx context.Context, groupCode string) (*models.Group, error
 	)
 
 	if err != nil {
-		if err == sql.ErrNoRows {
+		if err == pgx.ErrNoRows {
 			return nil, errors.New("group not found")
 		}
 		return nil, fmt.Errorf("query error: %w", err)
@@ -350,7 +349,7 @@ func IsUserGroupAdmin(ctx context.Context, userID, groupID int) (bool, error) {
 	err := Pool.QueryRow(ctx, query, userID, groupID).Scan(&result)
 
 	if err != nil {
-		if err == sql.ErrNoRows {
+		if err == pgx.ErrNoRows {
 			return false, nil
 		}
 		return false, fmt.Errorf("query error: %w", err)

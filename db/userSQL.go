@@ -2,7 +2,6 @@ package db
 
 import (
 	"context"
-	"database/sql"
 	"errors"
 	"fmt"
 	"nest/models"
@@ -39,7 +38,7 @@ func GetUserByUsername(ctx context.Context, username string) (*models.User, erro
 	)
 
 	if err != nil {
-		if err == sql.ErrNoRows {
+		if err == pgx.ErrNoRows {
 			return nil, errors.New("user not found")
 		}
 		return nil, fmt.Errorf("query error: %w", err)
