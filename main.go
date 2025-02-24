@@ -18,14 +18,14 @@ func main() {
 		log.Fatalf("Error loading .env file: %v", err)
 	}
 
-	// logFile, err := os.OpenFile("/var/log/uccelli-api.log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
-	// if err != nil {
-	// 	log.Fatalf("Failed to open log file: %v", err)
-	// }
-	// defer logFile.Close()
+	logFile, err := os.OpenFile("/var/log/uccelli-api.log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	if err != nil {
+		log.Fatalf("Failed to open log file: %v", err)
+	}
+	defer logFile.Close()
 
-	// log.SetOutput(logFile)
-	// log.Println("log file attached...")
+	log.SetOutput(logFile)
+	log.Println("log file attached...")
 
 	dbUser := os.Getenv("DB_USER")
 	dbPassword := os.Getenv("DB_PASSWORD")
