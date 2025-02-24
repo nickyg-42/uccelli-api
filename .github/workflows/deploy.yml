@@ -1,0 +1,33 @@
+name: Deploy Go Application to Raspberry Pi
+
+on:
+  push:
+    branches:
+      - main  # Trigger deploy on push to the main branch
+
+jobs:
+  build-and-deploy:
+    runs-on: self-hosted  # This uses your self-hosted runner
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Set up Go environment
+        uses: actions/setup-go@v2
+        with:
+          go-version: '1.23'  # Specify the Go version you need
+
+      - name: Build Go application
+        run: |
+          sudo go build -o /usr/local/bin/uccelli-api
+
+      - name: Restart uccelli-api service
+        run: |
+          # Restart the systemd service to reflect the new build
+          sudo systemctl restart uccelli-api
+
+      - name: Verify uccelli-api service status
+        run: |
+          # Check if the service is running successfully
+          sudo systemctl status uccelli-api --no-pager
