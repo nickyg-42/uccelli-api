@@ -23,9 +23,15 @@ func LoggingMiddleware(next http.Handler) http.Handler {
 		// Calculate duration
 		duration := time.Since(start)
 
+		// Get username from context if available
+		username := "unknown"
+		if user, ok := r.Context().Value("user").(string); ok {
+			username = user
+		}
+
 		// Log the request details
 		log.Printf(
-			"[%s] %s %s %s | Status: %d | Duration: %v | IP: %s | User-Agent: %s",
+			"[%s] %s %s %s | Status: %d | Duration: %v | IP: %s | User: %s | User-Agent: %s",
 			time.Now().Format("2006-01-02 15:04:05"),
 			r.Method,
 			r.URL.Path,
@@ -33,6 +39,7 @@ func LoggingMiddleware(next http.Handler) http.Handler {
 			rw.statusCode,
 			duration,
 			getClientIP(r),
+			username,
 			r.UserAgent(),
 		)
 	})
