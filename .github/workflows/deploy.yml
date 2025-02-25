@@ -20,7 +20,11 @@ jobs:
 
       - name: Build Go application
         run: |
-          go build -o /usr/local/bin/uccelli-api
+          go build -o uccelli-api
+
+      - name: Copy Binary to user bin
+        run: |
+          sudo cp uccelli-api /usr/local/bin
 
       - name: Restart uccelli-api service
         run: |
