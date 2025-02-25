@@ -25,7 +25,7 @@ func LoggingMiddleware(next http.Handler) http.Handler {
 
 		// Get username from context if available
 		username := "unknown"
-		if user, ok := r.Context().Value("user").(string); ok {
+		if user, ok := r.Context().Value("username").(string); ok {
 			username = user
 		}
 
