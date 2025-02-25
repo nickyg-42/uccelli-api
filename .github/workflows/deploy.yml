@@ -20,7 +20,7 @@ jobs:
 
       - name: Build Go application
         run: |
-          sudo go build -o /usr/local/bin/uccelli-api
+          go build -o /usr/local/bin/uccelli-api
 
       - name: Restart uccelli-api service
         run: |
