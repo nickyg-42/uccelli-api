@@ -15,17 +15,17 @@ import (
 func main() {
 	err := godotenv.Load()
 	if err != nil {
-		log.Fatalf("Error loading .env file: %v", err)
+		log.Printf("Warning: Error loading .env file: %v", err)
 	}
 
 	logFile, err := os.OpenFile("/var/log/uccelli-api.log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 	if err != nil {
-		log.Fatalf("Failed to open log file: %v", err)
+		log.Printf("Warning: Failed to open log file, defaulting to stdout: %v", err)
+	} else {
+		defer logFile.Close()
+		log.SetOutput(logFile)
+		log.Println("Log file attached...")
 	}
-	defer logFile.Close()
-
-	log.SetOutput(logFile)
-	log.Println("log file attached...")
 
 	dbUser := os.Getenv("DB_USER")
 	dbPassword := os.Getenv("DB_PASSWORD")

@@ -11,8 +11,22 @@ import (
 
 func GetUserByID(ctx context.Context, id int) (*models.User, error) {
 	var user models.User
-	query := "SELECT id, username, email FROM users WHERE id = $1"
-	err := Pool.QueryRow(ctx, query, id).Scan(&user.ID, &user.Username, &user.Email)
+	query := `
+		SELECT id, username, email, first_name, last_name, password_hash, role, created_at
+		FROM users 
+		WHERE id = $1
+	`
+	err := Pool.QueryRow(ctx, query, id).Scan(
+		&user.ID,
+		&user.Username,
+		&user.Email,
+		&user.FirstName,
+		&user.LastName,
+		&user.PasswordHash,
+		&user.Role,
+		&user.CreatedAt,
+	)
+
 	if err != nil {
 		return nil, errors.New("user not found")
 	}

@@ -23,6 +23,7 @@ func RegisterRoutes() http.Handler {
 		r.With(middleware.JWTAuthMiddleware).Group(func(r chi.Router) {
 			// User
 			r.Get("/user/{id}", handlers.GetUser)
+			r.Get("/user/{id}/info", handlers.GetUserInfo)
 			r.Get("/user/{id}/event", handlers.GetAllEventsForUser)
 
 			r.Delete("/user/{id}", handlers.DeleteUser)
@@ -72,4 +73,3 @@ func RegisterRoutes() http.Handler {
 
 	return r
 }
-

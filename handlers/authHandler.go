@@ -8,6 +8,8 @@ import (
 	"nest/utils"
 	"net/http"
 	"os"
+	"slices"
+	"strings"
 	"time"
 
 	"github.com/golang-jwt/jwt/v4"
@@ -35,6 +37,24 @@ func Register(w http.ResponseWriter, r *http.Request) {
 		log.Println("Error hashing password:", err)
 		http.Error(w, "Internal server error", http.StatusInternalServerError)
 		log.Println("Error generating password hash:", err)
+		return
+	}
+
+	validEmails := []string{
+		"evangelinegrimaldi8@gmail.com",
+		"nicholasgrimaldi42@gmail.com",
+		"fiona.tetreault@gmail.com",
+		"jessicaagrimaldi@gmail.com",
+		"noahgrimaldi1@gmail.com",
+		"josiahgrimaldi@gmail.com",
+		"john.grimaldi@gmail.com",
+		"dominicgrimaldi1738@gmail.com",
+		"karengrimaldi@gmail.com",
+	}
+
+	if !slices.Contains(validEmails, strings.ToLower(userDto.Email)) {
+		http.Error(w, "Email not whitelisted", http.StatusInternalServerError)
+		log.Println("Email not whitelisted")
 		return
 	}
 

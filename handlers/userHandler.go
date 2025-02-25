@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"log"
 	"nest/db"
+	"nest/models"
 	"nest/utils"
 	"net/http"
 	"strconv"
@@ -34,6 +35,31 @@ func GetUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	json.NewEncoder(w).Encode(user)
+}
+
+func GetUserInfo(w http.ResponseWriter, r *http.Request) {
+	idStr := chi.URLParam(r, "id")
+	id, err := strconv.Atoi(idStr)
+	if err != nil {
+		log.Println("Error converting ID to integer:", err)
+		http.Error(w, "Invalid ID", http.StatusBadRequest)
+		return
+	}
+
+	user, err := db.GetUserByID(r.Context(), id)
+	if err != nil {
+		log.Println("User not found:", err)
+		http.Error(w, "User not found", http.StatusNotFound)
+		return
+	}
+
+	userInfo := models.UserInfo{
+		FirstName: user.FirstName,
+		LastName:  user.LastName,
+		Username:  user.Username,
+	}
+
+	json.NewEncoder(w).Encode(userInfo)
 }
 
 func DeleteUser(w http.ResponseWriter, r *http.Request) {
