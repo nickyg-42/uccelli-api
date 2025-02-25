@@ -52,20 +52,13 @@ func ValidateEmail(email string) bool {
 
 // Alphabetic, < 50, no special chars (besides dash/space)
 func ValidateName(name string) bool {
-	log.Println("name received: ", name)
-
 	if len(name) < 1 {
 		return false
 	}
 
-	log.Println("passed len check", len(name))
-
 	const nameRegexPattern = `^[a-zA-Z]+(?:[ '-][a-zA-Z]+)*$`
 
 	nameRegex := regexp.MustCompile(nameRegexPattern)
-
-	log.Println("nameRegex: ", nameRegex)
-	log.Println("Passes regex?: ", nameRegex.MatchString(name))
 
 	return len(name) > 0 && len(name) <= 50 && nameRegex.MatchString(name)
 }

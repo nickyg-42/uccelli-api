@@ -12,6 +12,8 @@ import (
 func RegisterRoutes() http.Handler {
 	r := chi.NewRouter()
 
+	// Add logging middleware first to capture all requests
+	r.Use(middleware.LoggingMiddleware)
 	r.Use(middleware.CORSMiddleware)
 
 	// Prefix all routes with /api

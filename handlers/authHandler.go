@@ -111,7 +111,7 @@ func Login(w http.ResponseWriter, r *http.Request) {
 		"username": user.Username,
 		"user_id":  user.ID,
 		"role":     user.Role,
-		"exp":      time.Now().Add(time.Hour * 24).Unix(),
+		"exp":      time.Now().Add(time.Hour * 72).Unix(),
 	})
 
 	tokenString, err := token.SignedString([]byte(os.Getenv("JWT_SECRET")))

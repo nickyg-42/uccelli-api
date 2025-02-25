@@ -22,16 +22,18 @@ jobs:
         run: |
           go build -o uccelli-api
 
+      - name: Stop uccelli-api service
+        run: |
+          sudo systemctl stop uccelli-api
+
       - name: Copy Binary to user bin
         run: |
           sudo cp uccelli-api /usr/local/bin
 
-      - name: Restart uccelli-api service
+      - name: Start uccelli-api service
         run: |
-          # Restart the systemd service to reflect the new build
-          sudo systemctl restart uccelli-api
+          sudo systemctl start uccelli-api
 
       - name: Verify uccelli-api service status
         run: |
-          # Check if the service is running successfully
           sudo systemctl status uccelli-api --no-pager
