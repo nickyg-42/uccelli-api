@@ -13,8 +13,8 @@ func RegisterRoutes() http.Handler {
 	r := chi.NewRouter()
 
 	// Add logging middleware first to capture all requests
-	r.Use(middleware.LoggingMiddleware)
 	r.Use(middleware.CORSMiddleware)
+	r.Use(middleware.LoggingMiddleware)
 
 	// Prefix all routes with /api
 	r.Route("/api", func(r chi.Router) {

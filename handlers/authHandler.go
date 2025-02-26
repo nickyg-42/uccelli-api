@@ -20,23 +20,22 @@ func Register(w http.ResponseWriter, r *http.Request) {
 	var userDto models.UserDTO
 
 	if err := json.NewDecoder(r.Body).Decode(&userDto); err != nil {
+		log.Printf("ERROR: Failed to decode registration request body: %v", err)
 		http.Error(w, err.Error(), http.StatusBadRequest)
-		log.Println("Error decoding request body:", err)
 		return
 	}
 
 	if err := utils.ValidateNewUser(r, userDto); err != nil {
+		log.Printf("ERROR: User validation failed for %s: %v", userDto.Email, err)
 		http.Error(w, err.Error(), http.StatusBadRequest)
-		log.Println("Error validating new user:", err)
 		return
 	}
 
 	// Hash password
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(userDto.Password), bcrypt.DefaultCost)
 	if err != nil {
-		log.Println("Error hashing password:", err)
+		log.Printf("ERROR: Failed to hash password for user %s: %v", userDto.Email, err)
 		http.Error(w, "Internal server error", http.StatusInternalServerError)
-		log.Println("Error generating password hash:", err)
 		return
 	}
 
@@ -53,26 +52,29 @@ func Register(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if !slices.Contains(validEmails, strings.ToLower(userDto.Email)) {
+		log.Printf("ERROR: Registration attempt with non-whitelisted email: %s", userDto.Email)
 		http.Error(w, "Email not whitelisted", http.StatusInternalServerError)
-		log.Println("Email not whitelisted")
 		return
 	}
 
 	user := models.User{
-		FirstName:    userDto.FirstName,
-		LastName:     userDto.LastName,
-		Email:        userDto.Email,
-		Username:     userDto.Username,
+		FirstName:    strings.ToLower(userDto.FirstName),
+		LastName:     strings.ToLower(userDto.LastName),
+		Email:        strings.ToLower(userDto.Email),
+		Username:     strings.ToLower(userDto.Username),
 		PasswordHash: hashedPassword,
 	}
 
 	createdUser, err := db.CreateUser(r.Context(), &user)
 	if err != nil {
-		log.Println("Error saving user:", err)
+		log.Printf("ERROR: Failed to create user in database - Email: %s, Username: %s: %v",
+			userDto.Email, userDto.Username, err)
 		http.Error(w, "Internal server error", http.StatusInternalServerError)
-		log.Println("Error creating user:", err)
 		return
 	}
+
+	log.Printf("INFO: Successfully registered new user - ID: %d, Email: %s, Username: %s",
+		createdUser.ID, createdUser.Email, createdUser.Username)
 
 	w.WriteHeader(http.StatusCreated)
 	json.NewEncoder(w).Encode(createdUser)
@@ -87,39 +89,43 @@ func Login(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := json.NewDecoder(r.Body).Decode(&credentials); err != nil {
+		log.Printf("ERROR: Failed to decode login request body: %v", err)
 		http.Error(w, err.Error(), http.StatusBadRequest)
-		log.Println("Error decoding request body:", err)
 		return
 	}
 
-	user, err := db.GetUserByUsername(r.Context(), credentials.Username)
+	user, err := db.GetUserByUsername(r.Context(), strings.ToLower(credentials.Username))
 	if err != nil {
+		log.Printf("ERROR: Failed to find user during login - Username: %s: %v",
+			credentials.Username, err)
 		http.Error(w, "User not found", http.StatusUnauthorized)
-		log.Println("Error retrieving user by username:", err)
 		return
 	}
 
-	err = bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(credentials.Password))
-	if err != nil {
+	if err := bcrypt.CompareHashAndPassword(user.PasswordHash, []byte(credentials.Password)); err != nil {
+		log.Printf("ERROR: Invalid password attempt for user %s from IP %s",
+			credentials.Username, r.RemoteAddr)
 		http.Error(w, "Invalid credentials", http.StatusUnauthorized)
-		log.Println("Error comparing password hash:", err)
 		return
 	}
 
-	// Generate JWT
+	// Create the JWT token
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-		"username": user.Username,
 		"user_id":  user.ID,
+		"username": user.Username,
 		"role":     user.Role,
-		"exp":      time.Now().Add(time.Hour * 72).Unix(),
+		"exp":      time.Now().Add(time.Hour * 24).Unix(),
 	})
 
 	tokenString, err := token.SignedString([]byte(os.Getenv("JWT_SECRET")))
 	if err != nil {
+		log.Printf("ERROR: Failed to generate JWT token for user %s: %v",
+			user.Username, err)
 		http.Error(w, "Error generating token", http.StatusInternalServerError)
-		log.Println("Error generating JWT token:", err)
 		return
 	}
+
+	log.Printf("INFO: Successful login - User: %s, ID: %d", user.Username, user.ID)
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(map[string]string{

@@ -23,23 +23,27 @@ func LoggingMiddleware(next http.Handler) http.Handler {
 		// Calculate duration
 		duration := time.Since(start)
 
-		// Get username from context if available
+		// Try to get username from JWT first, fallback to context if not available
 		username := "unknown"
-		if user, ok := r.Context().Value("username").(string); ok {
+		if claims, err := ParseTokenFromRequest(r); err == nil {
+			if u, ok := claims["username"].(string); ok {
+				username = u
+			}
+		} else if user, ok := r.Context().Value("username").(string); ok {
 			username = user
 		}
 
 		// Log the request details
 		log.Printf(
-			"[%s] %s %s %s | Status: %d | Duration: %v | IP: %s | User: %s | User-Agent: %s",
+			"[%s] User: %s | %s %s %s | Status: %d | Duration: %v | IP: %s | User-Agent: %s",
 			time.Now().Format("2006-01-02 15:04:05"),
+			username,
 			r.Method,
 			r.URL.Path,
 			r.Proto,
 			rw.statusCode,
 			duration,
 			getClientIP(r),
-			username,
 			r.UserAgent(),
 		)
 	})
