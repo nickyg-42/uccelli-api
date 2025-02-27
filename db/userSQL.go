@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"nest/models"
+	"strings"
 
 	"github.com/jackc/pgx/v4"
 )
@@ -172,6 +173,53 @@ func UpdateUserEmail(ctx context.Context, userID int, email string) error {
 	_, err := Pool.Exec(ctx, query, email, userID)
 	if err != nil {
 		return fmt.Errorf("failed to update user email: %w", err)
+	}
+
+	return nil
+}
+
+func UpdateUser(ctx context.Context, userID int, updates map[string]interface{}) error {
+	// Build dynamic query based on provided fields
+	setFields := make([]string, 0)
+	args := make([]interface{}, 0)
+	argPosition := 1
+
+	if firstName, ok := updates["first_name"].(string); ok {
+		setFields = append(setFields, fmt.Sprintf("first_name = $%d", argPosition))
+		args = append(args, strings.ToLower(firstName))
+		argPosition++
+	}
+	if lastName, ok := updates["last_name"].(string); ok {
+		setFields = append(setFields, fmt.Sprintf("last_name = $%d", argPosition))
+		args = append(args, strings.ToLower(lastName))
+		argPosition++
+	}
+	if email, ok := updates["email"].(string); ok {
+		setFields = append(setFields, fmt.Sprintf("email = $%d", argPosition))
+		args = append(args, strings.ToLower(email))
+		argPosition++
+	}
+	if username, ok := updates["username"].(string); ok {
+		setFields = append(setFields, fmt.Sprintf("username = $%d", argPosition))
+		args = append(args, strings.ToLower(username))
+		argPosition++
+	}
+
+	if len(setFields) == 0 {
+		return errors.New("no valid fields to update")
+	}
+
+	query := fmt.Sprintf(`
+		UPDATE users
+		SET %s
+		WHERE id = $%d
+	`, strings.Join(setFields, ", "), argPosition)
+
+	args = append(args, userID)
+
+	_, err := Pool.Exec(ctx, query, args...)
+	if err != nil {
+		return fmt.Errorf("failed to update user: %w", err)
 	}
 
 	return nil

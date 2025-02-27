@@ -30,6 +30,7 @@ func RegisterRoutes() http.Handler {
 
 			r.Delete("/user/{id}", handlers.DeleteUser)
 
+			r.Patch("/user/{id}", handlers.UpdateUser)
 			r.Patch("/user/{id}/email", handlers.UpdateUserEmail)
 			r.Patch("/user/{id}/firstname", handlers.UpdateUserFirstName)
 			r.Patch("/user/{id}/lastname", handlers.UpdateUserLastName)

@@ -202,3 +202,53 @@ func UpdateUserLastName(w http.ResponseWriter, r *http.Request) {
 	log.Printf("INFO: Last name successfully updated for user %d to %s", id, lastNameUpdate.LastName)
 	w.WriteHeader(http.StatusOK)
 }
+
+func UpdateUser(w http.ResponseWriter, r *http.Request) {
+	idStr := chi.URLParam(r, "id")
+	id, err := strconv.Atoi(idStr)
+	if err != nil {
+		log.Printf("ERROR: Invalid user ID format: %s: %v", idStr, err)
+		http.Error(w, "Invalid ID", http.StatusBadRequest)
+		return
+	}
+
+	if !utils.IsSelfOrSA(r, id) {
+		reqUser := r.Context().Value("user_id").(int)
+		log.Printf("ERROR: Access denied - User %d attempted to update User %d", reqUser, id)
+		http.Error(w, "You do not have access to this resource", http.StatusForbidden)
+		return
+	}
+
+	var updates map[string]interface{}
+	if err := json.NewDecoder(r.Body).Decode(&updates); err != nil {
+		log.Printf("ERROR: Failed to decode update request for user %d: %v", id, err)
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	// Validate that only allowed fields are being updated
+	allowedFields := map[string]bool{
+		"first_name": true,
+		"last_name":  true,
+		"email":      true,
+		"username":   true,
+	}
+
+	for field := range updates {
+		if !allowedFields[field] {
+			log.Printf("ERROR: Attempt to update invalid field '%s' for user %d", field, id)
+			http.Error(w, "Invalid field in update request", http.StatusBadRequest)
+			return
+		}
+	}
+
+	err = db.UpdateUser(r.Context(), id, updates)
+	if err != nil {
+		log.Printf("ERROR: Failed to update user %d: %v", id, err)
+		http.Error(w, "Failed to update user", http.StatusInternalServerError)
+		return
+	}
+
+	log.Printf("INFO: Successfully updated fields for user %d: %v", id, updates)
+	w.WriteHeader(http.StatusOK)
+}

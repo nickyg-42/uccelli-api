@@ -209,9 +209,9 @@ func GetAllGroups(ctx context.Context) ([]models.Group, error) {
 
 func GetAllMembersForGroup(ctx context.Context, groupID int) ([]models.User, error) {
 	query := `
-		SELECT u.user_id, u.username, u.email, u.first_name, u.last_name, u.role, u.created_at, gm.role_in_group, gm.joined_at
+		SELECT u.id, u.username, u.email, u.first_name, u.last_name, u.role, u.created_at
 		FROM users u
-		JOIN group_memberships gm ON u.user_id = gm.user_id
+		JOIN group_memberships gm ON u.id = gm.user_id
 		WHERE gm.group_id = $1;
 	`
 
@@ -225,7 +225,7 @@ func GetAllMembersForGroup(ctx context.Context, groupID int) ([]models.User, err
 
 	for rows.Next() {
 		var user models.User
-		err := rows.Scan(&user.ID, &user.FirstName, &user.LastName, &user.Email, &user.Role, &user.CreatedAt)
+		err := rows.Scan(&user.ID, &user.Username, &user.Email, &user.FirstName, &user.LastName, &user.Role, &user.CreatedAt)
 		if err != nil {
 			return nil, fmt.Errorf("failed to scan row: %w", err)
 		}
