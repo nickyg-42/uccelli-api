@@ -1,2 +1,2 @@
 # Uccelli-api
-Events app using Golang and Postgres
+Events app API using Golang and Postgres
