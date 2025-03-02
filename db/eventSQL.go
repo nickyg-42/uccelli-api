@@ -240,8 +240,8 @@ func UpdateEventEndTime(ctx context.Context, eventID int, endTime time.Time) err
 	return nil
 }
 
-func GetEventsForTomorrow(ctx context.Context) ([]models.Event, error) {
-	tomorrow := time.Now().Add(24 * time.Hour)
+func GetEventsForTomorrow(ctx context.Context, timeToUse time.Time) ([]models.Event, error) {
+	tomorrow := timeToUse.Add(24 * time.Hour)
 	startOfTomorrow := time.Date(tomorrow.Year(), tomorrow.Month(), tomorrow.Day(), 0, 0, 0, 0, tomorrow.Location())
 	endOfTomorrow := startOfTomorrow.Add(24 * time.Hour)
 

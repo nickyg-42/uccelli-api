@@ -44,18 +44,18 @@ func main() {
 
 	router := routes.RegisterRoutes()
 
-	timeToUse := time.Local
+	location := time.Local
 	eastern, err := time.LoadLocation("America/New_York")
 	if err != nil {
 		log.Println("Failed to load EST:", err)
 	} else {
-		timeToUse = eastern
+		location = eastern
 	}
-	s := gocron.NewScheduler(timeToUse)
+	s := gocron.NewScheduler(location)
 
 	_, err = s.Every(1).Day().At("09:00").Do(func() {
 		ctx := context.Background()
-		events, err := db.GetEventsForTomorrow(ctx)
+		events, err := db.GetEventsForTomorrow(ctx, time.Now().In(location))
 		if err != nil {
 			log.Printf("Error fetching events for tomorrow: %v", err)
 			return
