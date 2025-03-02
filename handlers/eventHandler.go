@@ -83,6 +83,17 @@ func CreateEvent(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		log.Printf("ERROR: Failed to get group %d for event creation notification: %v", event.GroupID, err)
 	} else {
+		startTimeEastern := event.StartTime
+		endTimeEastern := event.EndTime
+
+		eastern, err := time.LoadLocation("America/New_York")
+		if err != nil {
+			log.Println("Error setting timezone to EST:", err)
+		} else {
+			startTimeEastern = event.StartTime.In(eastern)
+			endTimeEastern = event.EndTime.In(eastern)
+		}
+
 		link := "https://uccelliapp.duckdns.org"
 		emailBody := fmt.Sprintf(`A new event has been created in the group %s:
 
@@ -95,8 +106,8 @@ You can view it here: %s`,
 			group.Name,
 			event.Name,
 			event.Description,
-			event.StartTime.Format("Monday, January 2, 2006 at 3:04 PM"),
-			event.EndTime.Format("Monday, January 2, 2006 at 3:04 PM"),
+			startTimeEastern.Format("Monday, January 2, 2006 at 3:04 PM"),
+			endTimeEastern.Format("Monday, January 2, 2006 at 3:04 PM"),
 			link)
 		utils.NotifyAllUsersInGroup(int(event.GroupID), "New Event Created", emailBody)
 	}
