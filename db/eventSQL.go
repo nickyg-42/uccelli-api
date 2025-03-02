@@ -239,3 +239,47 @@ func UpdateEventEndTime(ctx context.Context, eventID int, endTime time.Time) err
 
 	return nil
 }
+
+func GetEventsForTomorrow(ctx context.Context) ([]models.Event, error) {
+	tomorrow := time.Now().Add(24 * time.Hour)
+	startOfTomorrow := time.Date(tomorrow.Year(), tomorrow.Month(), tomorrow.Day(), 0, 0, 0, 0, tomorrow.Location())
+	endOfTomorrow := startOfTomorrow.Add(24 * time.Hour)
+
+	query := `
+		SELECT id, group_id, created_by, name, description, start_time, end_time, created_at
+		FROM events
+		WHERE start_time >= $1 AND start_time < $2
+		ORDER BY start_time ASC
+	`
+
+	rows, err := Pool.Query(ctx, query, startOfTomorrow, endOfTomorrow)
+	if err != nil {
+		return nil, fmt.Errorf("failed to query events for tomorrow: %w", err)
+	}
+	defer rows.Close()
+
+	var events []models.Event
+	for rows.Next() {
+		var event models.Event
+		err := rows.Scan(
+			&event.ID,
+			&event.GroupID,
+			&event.CreatedByID,
+			&event.Name,
+			&event.Description,
+			&event.StartTime,
+			&event.EndTime,
+			&event.CreatedAt,
+		)
+		if err != nil {
+			return nil, fmt.Errorf("failed to scan event row: %w", err)
+		}
+		events = append(events, event)
+	}
+
+	if err = rows.Err(); err != nil {
+		return nil, fmt.Errorf("error iterating event rows: %w", err)
+	}
+
+	return events, nil
+}

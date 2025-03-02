@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"encoding/json"
+	"fmt"
 	"log"
 	"nest/db"
 	"nest/models"
@@ -76,6 +77,28 @@ func CreateEvent(w http.ResponseWriter, r *http.Request) {
 		log.Printf("ERROR: Failed to create event in group %d: %v", eventDTO.GroupID, err)
 		http.Error(w, "Failed to create event", http.StatusInternalServerError)
 		return
+	}
+
+	group, err := db.GetGroupByID(r.Context(), int(event.GroupID))
+	if err != nil {
+		log.Printf("ERROR: Failed to get group %d for event creation notification: %v", event.GroupID, err)
+	} else {
+		link := "https://uccelliapp.duckdns.org"
+		emailBody := fmt.Sprintf(`A new event has been created in the group %s:
+
+Event Name: %s
+Description: %s
+Start Time: %s
+End Time: %s
+
+You can view it here: %s`,
+			group.Name,
+			event.Name,
+			event.Description,
+			event.StartTime.Format("Monday, January 2, 2006 at 3:04 PM"),
+			event.EndTime.Format("Monday, January 2, 2006 at 3:04 PM"),
+			link)
+		utils.NotifyAllUsersInGroup(int(event.GroupID), "New Event Created", emailBody)
 	}
 
 	log.Printf("INFO: New event created - ID: %d, Name: %s, Group: %d, Creator: %d",

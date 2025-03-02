@@ -107,7 +107,7 @@ func CreateUser(ctx context.Context, user *models.User) (*models.User, error) {
 func DeleteUser(ctx context.Context, userID int) error {
 	query := `
 		DELETE FROM users
-		WHERE user_id = $1;
+		WHERE id = $1;
 	`
 	_, err := Pool.Exec(
 		ctx,
