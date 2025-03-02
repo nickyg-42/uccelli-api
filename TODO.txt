@@ -1,4 +1,0 @@
-// Log ips and access times
-// Unit tests
-
-// cast some strings to lower/upper

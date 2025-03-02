@@ -1,2 +1,2 @@
-# nest-api
-Family calendar app
+# Uccelli-api
+Events app using Golang and Postgres
