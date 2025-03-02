@@ -39,21 +39,12 @@ func Register(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	validEmails := []string{
-		"evangelinegrimaldi8@gmail.com",
-		"nicholasgrimaldi42@gmail.com",
-		"fiona.tetreault@gmail.com",
-		"jessicaagrimaldi@gmail.com",
-		"noahgrimaldi1@gmail.com",
-		"josiahgrimaldi@gmail.com",
-		"john.grimaldi@gmail.com",
-		"dominicgrimaldi1738@gmail.com",
-		"karengrimaldi@gmail.com",
-	}
+	validEmailsStr := os.Getenv("VALID_EMAILS")
+	validEmails := strings.Split(validEmailsStr, ",")
 
 	if !slices.Contains(validEmails, strings.ToLower(userDto.Email)) {
 		log.Printf("ERROR: Registration attempt with non-whitelisted email: %s", userDto.Email)
-		http.Error(w, "Email not whitelisted", http.StatusInternalServerError)
+		http.Error(w, "Email not whitelisted", http.StatusUnauthorized)
 		return
 	}
 
@@ -114,7 +105,7 @@ func Login(w http.ResponseWriter, r *http.Request) {
 		"user_id":  user.ID,
 		"username": user.Username,
 		"role":     user.Role,
-		"exp":      time.Now().Add(time.Hour * 168).Unix(),
+		"exp":      time.Now().Add(time.Hour * 504).Unix(),
 	})
 
 	tokenString, err := token.SignedString([]byte(os.Getenv("JWT_SECRET")))
