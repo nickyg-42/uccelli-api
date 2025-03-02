@@ -6,7 +6,6 @@ import (
 	"nest/db"
 	"net/smtp"
 	"os"
-	"sync"
 )
 
 func SendEmail(to string, subject string, body string) error {
@@ -37,15 +36,16 @@ func NotifyAllUsersInGroup(groupID int, subject string, body string) {
 		return
 	}
 
-	var wg sync.WaitGroup
 	for _, user := range users {
-		wg.Add(1)
 		go func(email string) {
-			defer wg.Done()
+			defer func() {
+				if r := recover(); r != nil {
+					log.Printf("ERROR: Notification failed for email %s: %v", email, r)
+				}
+			}()
 			NotifyUser(email, subject, body)
 		}(user.Email)
 	}
-	wg.Wait()
 }
 
 func NotifyUser(email string, subject string, body string) {
