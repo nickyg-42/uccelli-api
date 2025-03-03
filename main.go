@@ -67,11 +67,12 @@ func main() {
 			go func(e models.Event) {
 				defer wg.Done()
 				subject := fmt.Sprintf("Upcoming Event: %s", e.Name)
-				body := fmt.Sprintf("Event %s is occurring tomorrow from %s to %s\n\nDescription: %s",
+				body := fmt.Sprintf("**%s** is starting tomorrow at %s\n\nDescription: %s\n\nYou can view it here: %s",
 					e.Name,
-					e.StartTime.Format("3:04 PM"),
-					e.EndTime.Format("3:04 PM"),
-					e.Description)
+					e.StartTime.In(location).Format("3:04 PM"),
+					e.Description,
+					"https://uccelliapp.duckdns.org",
+				)
 				utils.NotifyAllUsersInGroup(int(e.GroupID), subject, body)
 			}(event)
 		}
