@@ -118,6 +118,103 @@ You can view it here: %s`,
 	json.NewEncoder(w).Encode(createdEvent)
 }
 
+func ReactToEvent(w http.ResponseWriter, r *http.Request) {
+	var userReaction models.UserReaction
+
+	if err := json.NewDecoder(r.Body).Decode(&userReaction); err != nil {
+		log.Printf("ERROR: Failed to decode user reaction request: %v", err)
+		http.Error(w, "Invalid request payload", http.StatusBadRequest)
+		return
+	}
+
+	event, err := db.GetEventByID(r.Context(), userReaction.EventID)
+	if err != nil {
+		log.Printf("ERROR: Failed to get event from reaction request: %v", err)
+		http.Error(w, "Invalid request payload", http.StatusBadRequest)
+		return
+	}
+
+	reqUser := r.Context().Value("user_id").(int)
+	if !utils.IsGroupMemberOrSA(r, int(event.GroupID)) {
+		log.Printf("ERROR: Access denied - User %d attempted to react to event %d", reqUser, userReaction.EventID)
+		http.Error(w, "You do not have access to this resource", http.StatusForbidden)
+		return
+	}
+
+	err = db.ReactToEvent(r.Context(), reqUser, userReaction.EventID, &userReaction.Reaction)
+	if err != nil {
+		log.Printf("ERROR: Failed to react to event %d: %v", userReaction.EventID, err)
+		http.Error(w, "Failed to react to event", http.StatusInternalServerError)
+		return
+	}
+
+	log.Printf("INFO: New user reaction created - EventID: %d, UserId: %d, Reaction: %s",
+		userReaction.EventID, userReaction.UserID, userReaction.Reaction)
+	w.WriteHeader(http.StatusCreated)
+}
+
+func UnreactToEvent(w http.ResponseWriter, r *http.Request) {
+	var userReaction models.UserReaction
+
+	if err := json.NewDecoder(r.Body).Decode(&userReaction); err != nil {
+		log.Printf("ERROR: Failed to decode user reaction request: %v", err)
+		http.Error(w, "Invalid request payload", http.StatusBadRequest)
+		return
+	}
+
+	event, err := db.GetEventByID(r.Context(), userReaction.EventID)
+	if err != nil {
+		log.Printf("ERROR: Failed to get event from reaction request: %v", err)
+		http.Error(w, "Invalid request payload", http.StatusBadRequest)
+		return
+	}
+
+	reqUser := r.Context().Value("user_id").(int)
+	if !utils.IsGroupMemberOrSA(r, int(event.GroupID)) {
+		log.Printf("ERROR: Access denied - User %d attempted to unreact to event %d", reqUser, userReaction.EventID)
+		http.Error(w, "You do not have access to this resource", http.StatusForbidden)
+		return
+	}
+
+	err = db.UnreactToEvent(r.Context(), reqUser, userReaction.EventID, &userReaction.Reaction)
+	if err != nil {
+		log.Printf("ERROR: Failed to unreact to event %d: %v", userReaction.EventID, err)
+		http.Error(w, "Failed to unreact to event", http.StatusInternalServerError)
+		return
+	}
+
+	log.Printf("INFO: User reaction removed - EventID: %d, UserId: %d, Reaction: %s",
+		userReaction.EventID, userReaction.UserID, userReaction.Reaction)
+	w.WriteHeader(http.StatusCreated)
+}
+
+func GetReactionsByEvent(w http.ResponseWriter, r *http.Request) {
+	idStr := chi.URLParam(r, "id")
+	eventID, err := strconv.Atoi(idStr)
+	userID := r.Context().Value("user_id").(int)
+	if err != nil {
+		log.Printf("ERROR: Invalid event ID format: %s: %v", idStr, err)
+		http.Error(w, "Invalid ID", http.StatusBadRequest)
+		return
+	}
+
+	if !utils.IsSelfOrSA(r, userID) {
+		log.Printf("ERROR: Access denied - User %d attempted to access event reactions for event %d", userID, eventID)
+		http.Error(w, "You do not have access to this resource", http.StatusForbidden)
+		return
+	}
+
+	reactions, err := db.GetReactionsByEvent(r.Context(), eventID)
+	if err != nil {
+		log.Printf("ERROR: Failed to retrieve reactions for event %d: %v", eventID, err)
+		http.Error(w, "Error getting reactions", http.StatusInternalServerError)
+		return
+	}
+
+	log.Printf("INFO: Successfully retrieved reactions for event %d", eventID)
+	json.NewEncoder(w).Encode(reactions)
+}
+
 func DeleteEvent(w http.ResponseWriter, r *http.Request) {
 	idStr := chi.URLParam(r, "id")
 	eventID, err := strconv.Atoi(idStr)

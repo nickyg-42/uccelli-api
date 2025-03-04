@@ -56,8 +56,10 @@ func RegisterRoutes() http.Handler {
 
 			// Event
 			r.Get("/event/{id}", handlers.GetEvent)
+			r.Get("/event/{id}/reaction", handlers.GetReactionsByEvent)
 
 			r.Post("/event", handlers.CreateEvent)
+			r.Post("/event/reaction", handlers.ReactToEvent)
 
 			r.Patch("/event/{id}/name", handlers.UpdateEventName)
 			r.Patch("/event/{id}/description", handlers.UpdateEventDescription)
@@ -65,6 +67,7 @@ func RegisterRoutes() http.Handler {
 			r.Patch("/event/{id}/end", handlers.UpdateEventEndTime)
 
 			r.Delete("/event/{id}", handlers.DeleteEvent)
+			r.Delete("/event/reaction", handlers.UnreactToEvent)
 
 			// SA endpoints
 			r.With(middleware.RoleMiddleware(models.SuperAdmin)).Patch("/group/{id}/admin/add/{user_id}", handlers.AddGroupAdmin)
