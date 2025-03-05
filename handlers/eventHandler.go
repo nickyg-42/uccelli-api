@@ -82,7 +82,7 @@ func CreateEvent(w http.ResponseWriter, r *http.Request) {
 	group, err := db.GetGroupByID(r.Context(), int(event.GroupID))
 	if err != nil {
 		log.Printf("ERROR: Failed to get group %d for event creation notification: %v", event.GroupID, err)
-	} else {
+	} else if group.DoSendEmails {
 		startTimeEastern := event.StartTime
 		endTimeEastern := event.EndTime
 

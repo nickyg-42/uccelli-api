@@ -34,7 +34,7 @@ func CreateGroup(ctx context.Context, group *models.Group) (*models.Group, error
 func GetGroupByID(ctx context.Context, groupID int) (*models.Group, error) {
 	var group models.Group
 	query := `
-        SELECT id, created_by, created_at, group_name, code
+        SELECT id, created_by, created_at, group_name, code, do_send_emails
         FROM groups 
         WHERE id = $1
     `
@@ -44,6 +44,7 @@ func GetGroupByID(ctx context.Context, groupID int) (*models.Group, error) {
 		&group.CreatedAt,
 		&group.Name,
 		&group.Code,
+		&group.DoSendEmails,
 	)
 
 	if err != nil {
@@ -58,7 +59,7 @@ func GetGroupByID(ctx context.Context, groupID int) (*models.Group, error) {
 func GetGroupByCode(ctx context.Context, groupCode string) (*models.Group, error) {
 	var group models.Group
 	query := `
-        SELECT id, created_by, created_at, group_name, code
+        SELECT id, created_by, created_at, group_name, code, do_send_emails
         FROM groups 
         WHERE code = $1
     `
@@ -68,6 +69,7 @@ func GetGroupByCode(ctx context.Context, groupCode string) (*models.Group, error
 		&group.CreatedAt,
 		&group.Name,
 		&group.Code,
+		&group.DoSendEmails,
 	)
 
 	if err != nil {
@@ -133,7 +135,7 @@ func RemoveGroupMember(ctx context.Context, userID, groupID int) error {
 
 func GetAllGroupsForUser(ctx context.Context, userID int) ([]models.Group, error) {
 	query := `
-		SELECT g.id, g.group_name, g.created_by, g.created_at, g.code
+		SELECT g.id, g.group_name, g.created_by, g.created_at, g.code, g.do_send_emails
 		FROM groups g
 		INNER JOIN group_memberships gm ON g.id = gm.group_id
 		WHERE gm.user_id = $1
@@ -155,6 +157,7 @@ func GetAllGroupsForUser(ctx context.Context, userID int) ([]models.Group, error
 			&group.CreatedByID,
 			&group.CreatedAt,
 			&group.Code,
+			&group.DoSendEmails,
 		)
 		if err != nil {
 			return nil, fmt.Errorf("failed to scan group row: %w", err)
@@ -172,7 +175,7 @@ func GetAllGroupsForUser(ctx context.Context, userID int) ([]models.Group, error
 
 func GetAllGroups(ctx context.Context) ([]models.Group, error) {
 	query := `
-		SELECT id, group_name, created_by, created_at, code
+		SELECT id, group_name, created_by, created_at, code, do_send_emails
 		FROM groups
 	`
 
@@ -192,6 +195,7 @@ func GetAllGroups(ctx context.Context) ([]models.Group, error) {
 			&group.CreatedByID,
 			&group.CreatedAt,
 			&group.Code,
+			&group.DoSendEmails,
 		)
 		if err != nil {
 			return nil, fmt.Errorf("failed to scan group row: %w", err)
@@ -404,6 +408,26 @@ func UpdateGroupName(ctx context.Context, groupID int, groupName string) error {
 		ctx,
 		query,
 		groupName,
+		groupID,
+	)
+
+	if err != nil {
+		return fmt.Errorf("failed to update group: %w", err)
+	}
+
+	return nil
+}
+
+func UpdateGroupDoSendEmails(ctx context.Context, groupID int, doSendEmails bool) error {
+	query := `
+		UPDATE groups
+		SET do_send_emails = $1
+		WHERE id = $2;
+	`
+	_, err := Pool.Exec(
+		ctx,
+		query,
+		doSendEmails,
 		groupID,
 	)
 

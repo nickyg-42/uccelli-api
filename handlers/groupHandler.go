@@ -417,6 +417,43 @@ func UpdateGroupName(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
 
+func UpdateGroupDoSendEmails(w http.ResponseWriter, r *http.Request) {
+	idStr := chi.URLParam(r, "id")
+	groupID, err := strconv.Atoi(idStr)
+	if err != nil {
+		log.Printf("ERROR: Invalid group ID format: %s: %v", idStr, err)
+		http.Error(w, "Invalid ID", http.StatusBadRequest)
+		return
+	}
+
+	if !utils.IsGroupAdminOrSA(r, groupID) {
+		reqUser := r.Context().Value("user_id").(int)
+		log.Printf("ERROR: Access denied - User %d attempted to update do_send_emails of Group %d", reqUser, groupID)
+		http.Error(w, "You do not have access to this resource", http.StatusForbidden)
+		return
+	}
+
+	var payload struct {
+		DoSendEmails bool `json:"do_send_emails"`
+	}
+	err = json.NewDecoder(r.Body).Decode(&payload)
+	if err != nil {
+		log.Printf("ERROR: Invalid group do_send_emails update request for group %d: %v", groupID, err)
+		http.Error(w, "Invalid request payload", http.StatusBadRequest)
+		return
+	}
+
+	err = db.UpdateGroupDoSendEmails(r.Context(), groupID, payload.DoSendEmails)
+	if err != nil {
+		log.Printf("ERROR: Failed to update do_send_emails for group %d: %v", groupID, err)
+		http.Error(w, "Failed to update do_send_emails", http.StatusInternalServerError)
+		return
+	}
+
+	log.Printf("INFO: Group %d do_send_emails updated to '%s'", groupID, payload.DoSendEmails)
+	w.WriteHeader(http.StatusOK)
+}
+
 func AddGroupAdmin(w http.ResponseWriter, r *http.Request) {
 	idStr := chi.URLParam(r, "id")
 	groupID, err := strconv.Atoi(idStr)

@@ -12,11 +12,9 @@ import (
 func RegisterRoutes() http.Handler {
 	r := chi.NewRouter()
 
-	// Add logging middleware first to capture all requests
 	r.Use(middleware.CORSMiddleware)
 	r.Use(middleware.LoggingMiddleware)
 
-	// Prefix all routes with /api
 	r.Route("/api", func(r chi.Router) {
 		r.Post("/user/login", handlers.Login)
 		r.Post("/user/register", handlers.Register)
@@ -49,6 +47,7 @@ func RegisterRoutes() http.Handler {
 			r.Post("/group/join/{group_code}", handlers.JoinGroup)
 
 			r.Patch("/group/{id}/name", handlers.UpdateGroupName)
+			r.Patch("/group/{id}/do-send-emails", handlers.UpdateGroupDoSendEmails)
 
 			r.Delete("/group/{id}/user/{user_id}", handlers.RemoveUserFromGroup)
 			r.Delete("/group/{id}/user", handlers.LeaveGroup)

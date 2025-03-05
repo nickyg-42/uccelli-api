@@ -66,14 +66,21 @@ func main() {
 			wg.Add(1)
 			go func(e models.Event) {
 				defer wg.Done()
-				subject := fmt.Sprintf("Upcoming Event: %s", e.Name)
-				body := fmt.Sprintf("**%s** is starting tomorrow at %s\n\nDescription: %s\n\nYou can view it here: %s",
-					e.Name,
-					e.StartTime.In(location).Format("3:04 PM"),
-					e.Description,
-					"https://uccelliapp.duckdns.org",
-				)
-				utils.NotifyAllUsersInGroup(int(e.GroupID), subject, body)
+				group, err := db.GetGroupByID(context.Background(), int(e.GroupID))
+				if err != nil {
+					log.Printf("Error fetching group for event: %v", err)
+					return
+				}
+				if group.DoSendEmails {
+					subject := fmt.Sprintf("Upcoming Event: %s", e.Name)
+					body := fmt.Sprintf("**%s** is starting tomorrow at %s\n\nDescription: %s\n\nYou can view it here: %s",
+						e.Name,
+						e.StartTime.In(location).Format("3:04 PM"),
+						e.Description,
+						"https://uccelliapp.duckdns.org",
+					)
+					utils.NotifyAllUsersInGroup(int(e.GroupID), subject, body)
+				}
 			}(event)
 		}
 		wg.Wait()
