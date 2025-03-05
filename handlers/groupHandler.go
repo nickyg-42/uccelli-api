@@ -450,7 +450,7 @@ func UpdateGroupDoSendEmails(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	log.Printf("INFO: Group %d do_send_emails updated to '%s'", groupID, payload.DoSendEmails)
+	log.Printf("INFO: Group %d do_send_emails updated to '%t'", groupID, payload.DoSendEmails)
 	w.WriteHeader(http.StatusOK)
 }
 
