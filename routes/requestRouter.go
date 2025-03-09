@@ -18,6 +18,9 @@ func RegisterRoutes() http.Handler {
 	r.Route("/api", func(r chi.Router) {
 		r.Post("/user/login", handlers.Login)
 		r.Post("/user/register", handlers.Register)
+		r.Post("/user/reset-password", handlers.GeneratePasswordResetCode)
+		r.Post("/user/reset-password/verify", handlers.VerifyPasswordResetCode)
+		r.Post("/user/reset-password/confirm", handlers.ResetPassword)
 
 		// JWT required routes
 		r.With(middleware.JWTAuthMiddleware).Group(func(r chi.Router) {
@@ -71,7 +74,6 @@ func RegisterRoutes() http.Handler {
 			// SA endpoints
 			r.With(middleware.RoleMiddleware(models.SuperAdmin)).Patch("/group/{id}/admin/add/{user_id}", handlers.AddGroupAdmin)
 			r.With(middleware.RoleMiddleware(models.SuperAdmin)).Patch("/group/{id}/admin/remove/{user_id}", handlers.RemoveGroupAdmin)
-
 			r.With(middleware.RoleMiddleware(models.SuperAdmin)).Get("/group/all", handlers.GetAllGroups)
 		})
 	})

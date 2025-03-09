@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"log"
 	"nest/db"
+	"nest/helpers"
 	"nest/models"
 	"nest/utils"
 	"net/http"
@@ -54,7 +55,7 @@ func CreateGroup(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	code, err := utils.GenerateRandomString(16)
+	code, err := helpers.GenerateRandomString(16)
 	if err != nil {
 		log.Printf("ERROR: Failed to generate group code: %v", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)

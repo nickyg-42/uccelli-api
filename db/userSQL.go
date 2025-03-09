@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"nest/helpers"
 	"nest/models"
 	"strings"
 
@@ -220,6 +221,63 @@ func UpdateUser(ctx context.Context, userID int, updates map[string]interface{})
 	_, err := Pool.Exec(ctx, query, args...)
 	if err != nil {
 		return fmt.Errorf("failed to update user: %w", err)
+	}
+
+	return nil
+}
+
+func GeneratePasswordResetCode(ctx context.Context, email string) (error, string) {
+	passwordResetCode, err := helpers.GenerateRandomString(16)
+	if err != nil {
+		return fmt.Errorf("failed to generate password reset code: %w", err), ""
+	}
+
+	query := `
+		UPDATE users
+		SET password_reset_code = $1
+		WHERE email = $2
+	`
+	_, err = Pool.Exec(ctx, query, passwordResetCode, email)
+	if err != nil {
+		return fmt.Errorf("failed to update user password: %w", err), ""
+	}
+
+	return nil, passwordResetCode
+}
+
+func VerifyPasswordResetCode(ctx context.Context, code, email string) error {
+	query := `
+		SELECT 1
+		FROM users
+		WHERE password_reset_code = $1 AND email = $2
+	`
+	var result int
+	err := Pool.QueryRow(ctx, query, code, email).Scan(&result)
+	if err != nil {
+		if err == pgx.ErrNoRows {
+			return errors.New("invalid password reset code")
+		}
+		return fmt.Errorf("query error: %w", err)
+	}
+
+	return nil
+}
+
+func ResetPassword(ctx context.Context, email, code string, hashedPassword []byte) error {
+	// Verify code is valid for email
+	err := VerifyPasswordResetCode(ctx, code, email)
+	if err != nil {
+		return fmt.Errorf("cannot reset password, failed to verify password reset code: %w", err)
+	}
+
+	query := `
+		UPDATE users
+		SET password_hash = $1, password_reset_code = NULL
+		WHERE email = $2
+	`
+	_, err = Pool.Exec(ctx, query, hashedPassword, email)
+	if err != nil {
+		return fmt.Errorf("failed to reset password: %w", err)
 	}
 
 	return nil
