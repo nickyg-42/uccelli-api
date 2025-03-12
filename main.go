@@ -9,6 +9,7 @@ import (
 	"nest/routes"
 	"nest/utils"
 	"os"
+	"strings"
 	"sync"
 	"time"
 
@@ -71,12 +72,36 @@ func main() {
 					log.Printf("Error fetching group for event: %v", err)
 					return
 				}
+
+				attendees, err := db.GetEventAttendance(context.Background(), int(e.ID))
+				if err != nil {
+					log.Printf("Error fetching attendees for event: %v", err)
+					return
+				}
+
+				var going, notGoing []string
+				for _, attendee := range attendees {
+					user, err := db.GetUserByID(context.Background(), attendee.UserID)
+					if err != nil {
+						log.Printf("Error fetching user for attendee: %v", err)
+						continue
+					}
+
+					if attendee.Status == "going" {
+						going = append(going, user.FirstName+" "+user.LastName)
+					} else if attendee.Status == "not-going" {
+						notGoing = append(notGoing, user.FirstName+" "+user.LastName)
+					}
+				}
+
 				if group.DoSendEmails {
 					subject := fmt.Sprintf("Upcoming Event: %s", e.Name)
-					body := fmt.Sprintf("**%s** is starting tomorrow at %s\n\nDescription: %s\n\nYou can view it here: %s",
+					body := fmt.Sprintf("**%s** is starting tomorrow at %s\n\nDescription: %s\n\nGoing: %s\nNot Going: %s\n\nYou can view it here: %s",
 						e.Name,
 						e.StartTime.In(location).Format("3:04 PM"),
 						e.Description,
+						strings.Join(going, ", "),
+						strings.Join(notGoing, ", "),
 						"https://uccelliapp.duckdns.org",
 					)
 					utils.NotifyAllUsersInGroup(int(e.GroupID), subject, body)
