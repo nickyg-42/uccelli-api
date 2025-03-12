@@ -91,10 +91,17 @@ func IsGroupMemberOrSA(r *http.Request, groupID int) bool {
 	role := r.Context().Value("role").(string)
 	authenticatedUserID := r.Context().Value("user_id").(int)
 
+	log.Println("role", role)
+	log.Println("authenticatedUserID", authenticatedUserID)
+	log.Println("groupId", groupID)
+
 	isGroupMember, err := db.IsUserGroupMember(r.Context(), authenticatedUserID, groupID)
 	if err != nil {
+		log.Println(err)
 		return false
 	}
+
+	log.Println("isGroupMember", isGroupMember)
 
 	if role != string(models.SuperAdmin) && !isGroupMember {
 		return false

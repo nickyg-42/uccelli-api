@@ -469,7 +469,7 @@ func GetEventAttendance(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if !utils.IsGroupMemberOrSA(r, eventID) {
+	if !utils.IsEventCreatorOrGroupMemberOrSA(r, eventID) {
 		reqUser := r.Context().Value("user_id").(int)
 		log.Printf("ERROR: Access denied - User %d attempted to access attendance for Event %d", reqUser, eventID)
 		http.Error(w, "You do not have access to this resource", http.StatusForbidden)
@@ -496,7 +496,7 @@ func UpdateEventAttendance(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if !utils.IsGroupMemberOrSA(r, attendanceData.EventID) {
+	if !utils.IsEventCreatorOrGroupMemberOrSA(r, attendanceData.EventID) {
 		reqUser := r.Context().Value("user_id").(int)
 		log.Printf("ERROR: Access denied - User %d attempted to update attendance for Event %d", reqUser, attendanceData.EventID)
 		http.Error(w, "You do not have access to this resource", http.StatusForbidden)
