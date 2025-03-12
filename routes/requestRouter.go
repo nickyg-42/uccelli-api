@@ -59,9 +59,11 @@ func RegisterRoutes() http.Handler {
 			// Event
 			r.Get("/event/{id}", handlers.GetEvent)
 			r.Get("/event/{id}/reaction", handlers.GetReactionsByEvent)
+			r.Get("/event/{id}/attendance", handlers.GetEventAttendance)
 
 			r.Post("/event", handlers.CreateEvent)
 			r.Post("/event/reaction", handlers.ReactToEvent)
+			r.Post("/event/attendance", handlers.UpdateEventAttendance)
 
 			r.Patch("/event/{id}/name", handlers.UpdateEventName)
 			r.Patch("/event/{id}/description", handlers.UpdateEventDescription)

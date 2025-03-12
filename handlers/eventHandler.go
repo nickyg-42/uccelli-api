@@ -459,3 +459,64 @@ func UpdateEventEndTime(w http.ResponseWriter, r *http.Request) {
 	log.Printf("INFO: Event end time updated for event %d", eventID)
 	w.WriteHeader(http.StatusOK)
 }
+
+func GetEventAttendance(w http.ResponseWriter, r *http.Request) {
+	idStr := chi.URLParam(r, "id")
+	eventID, err := strconv.Atoi(idStr)
+	if err != nil {
+		log.Printf("ERROR: Invalid event ID format: %s: %v", idStr, err)
+		http.Error(w, "Invalid ID", http.StatusBadRequest)
+		return
+	}
+
+	if !utils.IsGroupMemberOrSA(r, eventID) {
+		reqUser := r.Context().Value("user_id").(int)
+		log.Printf("ERROR: Access denied - User %d attempted to access attendance for Event %d", reqUser, eventID)
+		http.Error(w, "You do not have access to this resource", http.StatusForbidden)
+		return
+	}
+
+	attendance, err := db.GetEventAttendance(r.Context(), eventID)
+	if err != nil {
+		log.Printf("ERROR: Failed to get attendance for event %d: %v", eventID, err)
+		http.Error(w, "Failed to get attendance", http.StatusInternalServerError)
+		return
+	}
+
+	log.Printf("INFO: Successfully retrieved attendance for event %d", eventID)
+	json.NewEncoder(w).Encode(attendance)
+}
+
+func UpdateEventAttendance(w http.ResponseWriter, r *http.Request) {
+	var attendanceData models.AttendanceData
+
+	if err := json.NewDecoder(r.Body).Decode(&attendanceData); err != nil {
+		log.Printf("ERROR: Failed to decode attendance data: %v", err)
+		http.Error(w, "Invalid request payload", http.StatusBadRequest)
+		return
+	}
+
+	if !utils.IsGroupMemberOrSA(r, attendanceData.EventID) {
+		reqUser := r.Context().Value("user_id").(int)
+		log.Printf("ERROR: Access denied - User %d attempted to update attendance for Event %d", reqUser, attendanceData.EventID)
+		http.Error(w, "You do not have access to this resource", http.StatusForbidden)
+		return
+	}
+
+	if attendanceData.Status != "going" && attendanceData.Status != "not-going" && attendanceData.Status != "" {
+		log.Printf("ERROR: Invalid attendance status: %s", attendanceData.Status)
+		http.Error(w, "Invalid attendance status", http.StatusBadRequest)
+		return
+	}
+
+	err := db.UpdateEventAttendance(r.Context(), &attendanceData)
+	if err != nil {
+		log.Printf("ERROR: Failed to update attendance: %v", err)
+		http.Error(w, "Failed to update attendance", http.StatusInternalServerError)
+		return
+	}
+
+	log.Printf("INFO: Successfully updated attendance for event %d by user %d to status %s",
+		attendanceData.EventID, attendanceData.UserID, attendanceData.Status)
+	w.WriteHeader(http.StatusOK)
+}

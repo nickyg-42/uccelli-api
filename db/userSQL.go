@@ -226,10 +226,10 @@ func UpdateUser(ctx context.Context, userID int, updates map[string]interface{})
 	return nil
 }
 
-func GeneratePasswordResetCode(ctx context.Context, email string) (error, string) {
+func GeneratePasswordResetCode(ctx context.Context, email string) (string, error) {
 	passwordResetCode, err := helpers.GenerateRandomString(16)
 	if err != nil {
-		return fmt.Errorf("failed to generate password reset code: %w", err), ""
+		return "", fmt.Errorf("failed to generate password reset code: %w", err)
 	}
 
 	query := `
@@ -239,10 +239,10 @@ func GeneratePasswordResetCode(ctx context.Context, email string) (error, string
 	`
 	_, err = Pool.Exec(ctx, query, passwordResetCode, email)
 	if err != nil {
-		return fmt.Errorf("failed to update user password: %w", err), ""
+		return "", fmt.Errorf("failed to update user password: %w", err)
 	}
 
-	return nil, passwordResetCode
+	return passwordResetCode, nil
 }
 
 func VerifyPasswordResetCode(ctx context.Context, code, email string) error {

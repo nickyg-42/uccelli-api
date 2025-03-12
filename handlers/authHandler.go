@@ -135,7 +135,7 @@ func GeneratePasswordResetCode(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err, resetCode := db.GeneratePasswordResetCode(r.Context(), email.Email)
+	resetCode, err := db.GeneratePasswordResetCode(r.Context(), email.Email)
 	if err != nil {
 		log.Printf("ERROR: Failed to generate password reset code for email %s: %v", email.Email, err)
 		http.Error(w, "Failed to generate password reset code", http.StatusInternalServerError)

@@ -283,3 +283,77 @@ func GetEventsForTomorrow(ctx context.Context, timeToUse time.Time) ([]models.Ev
 
 	return events, nil
 }
+
+func GetEventAttendance(ctx context.Context, eventID int) ([]models.EventAttendance, error) {
+	query := `
+        SELECT ea.id, ea.user_id, ea.event_id, ea.status, ea.created_at
+        FROM event_attendance ea
+        WHERE ea.event_id = $1
+        ORDER BY ea.created_at DESC
+    `
+
+	rows, err := Pool.Query(ctx, query, eventID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get attendance for event %d: %w", eventID, err)
+	}
+	defer rows.Close()
+
+	var attendances []models.EventAttendance
+	for rows.Next() {
+		var attendance models.EventAttendance
+		err = rows.Scan(
+			&attendance.ID,
+			&attendance.UserID,
+			&attendance.EventID,
+			&attendance.Status,
+			&attendance.CreatedAt,
+		)
+		if err != nil {
+			return nil, fmt.Errorf("failed to scan attendance row: %w", err)
+		}
+		attendances = append(attendances, attendance)
+	}
+
+	if err = rows.Err(); err != nil {
+		return nil, fmt.Errorf("error iterating attendance rows: %w", err)
+	}
+
+	return attendances, nil
+}
+
+func UpdateEventAttendance(ctx context.Context, data *models.AttendanceData) error {
+	// Check if record exists
+	checkQuery := `
+		SELECT id FROM event_attendance 
+		WHERE user_id = $1 AND event_id = $2
+	`
+	var id int
+	err := Pool.QueryRow(ctx, checkQuery, data.UserID, data.EventID).Scan(&id)
+
+	if err == pgx.ErrNoRows {
+		// Insert new record if none exists
+		insertQuery := `
+			INSERT INTO event_attendance (user_id, event_id, status)
+			VALUES ($1, $2, $3)
+		`
+		_, err = Pool.Exec(ctx, insertQuery, data.UserID, data.EventID, data.Status)
+		if err != nil {
+			return fmt.Errorf("failed to create attendance: %w", err)
+		}
+	} else if err != nil {
+		return fmt.Errorf("failed to check attendance: %w", err)
+	} else {
+		// Update existing record
+		updateQuery := `
+			UPDATE event_attendance 
+			SET status = $1
+			WHERE user_id = $2 AND event_id = $3
+		`
+		_, err = Pool.Exec(ctx, updateQuery, data.Status, data.UserID, data.EventID)
+		if err != nil {
+			return fmt.Errorf("failed to update attendance: %w", err)
+		}
+	}
+
+	return nil
+}
