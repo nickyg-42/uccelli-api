@@ -12,8 +12,8 @@ import (
 
 func CreateEvent(ctx context.Context, event *models.Event) (*models.Event, error) {
 	query := `
-		INSERT INTO events (group_id, created_by, name, description, start_time, end_time)
-		VALUES ($1, $2, $3, $4, $5, $6)
+		INSERT INTO events (group_id, created_by, name, description, start_time, end_time, location)
+		VALUES ($1, $2, $3, $4, $5, $6, $7)
 		RETURNING id, created_at
 	`
 
@@ -26,6 +26,7 @@ func CreateEvent(ctx context.Context, event *models.Event) (*models.Event, error
 		event.Description,
 		event.StartTime,
 		event.EndTime,
+		event.Location,
 	).Scan(&event.ID, &event.CreatedAt)
 
 	if err != nil {
@@ -56,7 +57,7 @@ func DeleteEvent(ctx context.Context, eventID int) error {
 func GetEventByID(ctx context.Context, eventID int) (*models.Event, error) {
 	var event models.Event
 	query := `
-        SELECT id, group_id, created_by, name, description, start_time, end_time, created_at
+        SELECT id, group_id, created_by, name, description, start_time, end_time, created_at, location
         FROM events 
         WHERE id = $1
     `
@@ -69,6 +70,7 @@ func GetEventByID(ctx context.Context, eventID int) (*models.Event, error) {
 		&event.StartTime,
 		&event.EndTime,
 		&event.CreatedAt,
+		&event.Location,
 	)
 
 	if err != nil {
@@ -82,7 +84,7 @@ func GetEventByID(ctx context.Context, eventID int) (*models.Event, error) {
 
 func GetAllEventsByUser(ctx context.Context, userID int) ([]models.Event, error) {
 	query := `
-		SELECT id, group_id, created_by, name, description, start_time, end_time, created_at
+		SELECT id, group_id, created_by, name, description, start_time, end_time, created_at, location
 		FROM events
 		WHERE created_by = $1
 	`
@@ -106,6 +108,7 @@ func GetAllEventsByUser(ctx context.Context, userID int) ([]models.Event, error)
 			&event.StartTime,
 			&event.EndTime,
 			&event.CreatedAt,
+			&event.Location,
 		)
 		if err != nil {
 			return nil, fmt.Errorf("failed to scan event row: %w", err)
@@ -122,7 +125,7 @@ func GetAllEventsByUser(ctx context.Context, userID int) ([]models.Event, error)
 
 func GetAllEventsByGroup(ctx context.Context, groupID int) ([]models.Event, error) {
 	query := `
-		SELECT id, group_id, created_by, name, description, start_time, end_time, created_at
+		SELECT id, group_id, created_by, name, description, start_time, end_time, created_at, location
 		FROM events
 		WHERE group_id = $1
 	`
@@ -146,6 +149,7 @@ func GetAllEventsByGroup(ctx context.Context, groupID int) ([]models.Event, erro
 			&event.StartTime,
 			&event.EndTime,
 			&event.CreatedAt,
+			&event.Location,
 		)
 		if err != nil {
 			return nil, fmt.Errorf("failed to scan event row: %w", err)
@@ -246,7 +250,7 @@ func GetEventsForTomorrow(ctx context.Context, timeToUse time.Time) ([]models.Ev
 	endOfTomorrow := startOfTomorrow.Add(24 * time.Hour)
 
 	query := `
-		SELECT id, group_id, created_by, name, description, start_time, end_time, created_at
+		SELECT id, group_id, created_by, name, description, start_time, end_time, created_at, location
 		FROM events
 		WHERE start_time >= $1 AND start_time < $2
 		ORDER BY start_time ASC
@@ -270,6 +274,7 @@ func GetEventsForTomorrow(ctx context.Context, timeToUse time.Time) ([]models.Ev
 			&event.StartTime,
 			&event.EndTime,
 			&event.CreatedAt,
+			&event.Location,
 		)
 		if err != nil {
 			return nil, fmt.Errorf("failed to scan event row: %w", err)

@@ -9,4 +9,5 @@ type EventDTO struct {
 	StartTime   time.Time `json:"start_time"`
 	EndTime     time.Time `json:"end_time"`
 	CreatedByID int64     `json:"created_by_id"`
+	Location    string    `json:"location"`
 }

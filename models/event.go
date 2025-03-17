@@ -11,4 +11,5 @@ type Event struct {
 	EndTime     time.Time `json:"end_time"`
 	CreatedByID int64     `json:"created_by_id"`
 	CreatedAt   time.Time `json:"created_at"`
+	Location    string    `json:"location"`
 }

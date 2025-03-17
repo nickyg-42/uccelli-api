@@ -70,6 +70,7 @@ func CreateEvent(w http.ResponseWriter, r *http.Request) {
 		StartTime:   eventDTO.StartTime,
 		EndTime:     eventDTO.EndTime,
 		CreatedByID: eventDTO.CreatedByID,
+		Location:    eventDTO.Location,
 	}
 
 	createdEvent, err := db.CreateEvent(r.Context(), &event)
@@ -98,6 +99,7 @@ func CreateEvent(w http.ResponseWriter, r *http.Request) {
 		emailBody := fmt.Sprintf(`A new event has been created in the group %s:
 
 Event Name: %s
+Location: %s
 Description: %s
 Start Time: %s
 End Time: %s
@@ -105,6 +107,7 @@ End Time: %s
 You can view it here: %s`,
 			group.Name,
 			event.Name,
+			event.Location,
 			event.Description,
 			startTimeEastern.Format("Monday, January 2, 2006 at 3:04 PM"),
 			endTimeEastern.Format("Monday, January 2, 2006 at 3:04 PM"),
