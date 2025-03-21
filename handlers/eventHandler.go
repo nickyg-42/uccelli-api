@@ -249,6 +249,41 @@ func DeleteEvent(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	group, err := db.GetGroupByID(r.Context(), int(event.GroupID))
+	if err != nil {
+		log.Printf("ERROR: Failed to get group %d for event deletion notification: %v", event.GroupID, err)
+	} else if group.DoSendEmails {
+		startTimeEastern := event.StartTime
+		endTimeEastern := event.EndTime
+
+		eastern, err := time.LoadLocation("America/New_York")
+		if err != nil {
+			log.Println("Error setting timezone to EST:", err)
+		} else {
+			startTimeEastern = event.StartTime.In(eastern)
+			endTimeEastern = event.EndTime.In(eastern)
+		}
+
+		link := "https://uccelliapp.duckdns.org"
+		emailBody := fmt.Sprintf(`An event has been deleted in the group %s:
+
+Event Name: %s
+Location: %s
+Description: %s
+Start Time: %s
+End Time: %s
+
+You can view it here: %s`,
+			group.Name,
+			event.Name,
+			event.Location,
+			event.Description,
+			startTimeEastern.Format("Monday, January 2, 2006 at 3:04 PM"),
+			endTimeEastern.Format("Monday, January 2, 2006 at 3:04 PM"),
+			link)
+		utils.NotifyAllUsersInGroup(int(event.GroupID), "Event Deleted", emailBody)
+	}
+
 	log.Printf("INFO: Event deleted - ID: %d, Name: %s, Group: %d",
 		event.ID, event.Name, event.GroupID)
 	w.WriteHeader(http.StatusOK)
