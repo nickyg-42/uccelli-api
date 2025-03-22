@@ -98,8 +98,8 @@ func main() {
 					subject := fmt.Sprintf("Upcoming Event: %s", e.Name)
 					body := fmt.Sprintf("**%s** is starting tomorrow at %s\n\nLocation: %s\n\nDescription: %s\n\nGoing: %s\nNot Going: %s\n\nYou can view it here: %s",
 						e.Name,
-						e.Location,
 						e.StartTime.In(location).Format("3:04 PM"),
+						e.Location,
 						e.Description,
 						strings.Join(going, ", "),
 						strings.Join(notGoing, ", "),
