@@ -498,6 +498,77 @@ func UpdateEventEndTime(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
 
+func UpdateEvent(w http.ResponseWriter, r *http.Request) {
+	idStr := chi.URLParam(r, "id")
+	id, err := strconv.Atoi(idStr)
+	if err != nil {
+		log.Printf("ERROR: Invalid event ID format: %s: %v", idStr, err)
+		http.Error(w, "Invalid ID", http.StatusBadRequest)
+		return
+	}
+
+	if !utils.IsEventCreatorOrGroupAdminOrSA(r, id) {
+		reqUser := r.Context().Value("user_id").(int)
+		log.Printf("ERROR: Access denied - User %d attempted to update Event %d", reqUser, id)
+		http.Error(w, "You do not have access to this resource", http.StatusForbidden)
+		return
+	}
+
+	var updates map[string]interface{}
+	if err := json.NewDecoder(r.Body).Decode(&updates); err != nil {
+		log.Printf("ERROR: Failed to decode update request for event %d: %v", id, err)
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	if startTimeStr, ok := updates["start_time"].(string); ok {
+		startTime, err := time.Parse(time.RFC3339, startTimeStr)
+		if err != nil {
+			log.Printf("ERROR: Invalid start_time format for event %d: %v", id, err)
+			http.Error(w, "Invalid start_time format", http.StatusBadRequest)
+			return
+		}
+		updates["start_time"] = startTime
+	}
+
+	if endTimeStr, ok := updates["end_time"].(string); ok {
+		endTime, err := time.Parse(time.RFC3339, endTimeStr)
+		if err != nil {
+			log.Printf("ERROR: Invalid end_time format for event %d: %v", id, err)
+			http.Error(w, "Invalid end_time format", http.StatusBadRequest)
+			return
+		}
+		updates["end_time"] = endTime
+	}
+
+	// Validate that only allowed fields are being updated
+	allowedFields := map[string]bool{
+		"name":        true,
+		"description": true,
+		"start_time":  true,
+		"end_time":    true,
+		"location":    true,
+	}
+
+	for field := range updates {
+		if !allowedFields[field] {
+			log.Printf("ERROR: Attempt to update invalid field '%s' for event %d", field, id)
+			http.Error(w, "Invalid field in update request", http.StatusBadRequest)
+			return
+		}
+	}
+
+	err = db.UpdateEvent(r.Context(), id, updates)
+	if err != nil {
+		log.Printf("ERROR: Failed to update event %d: %v", id, err)
+		http.Error(w, "Failed to update event", http.StatusInternalServerError)
+		return
+	}
+
+	log.Printf("INFO: Successfully updated fields for event %d: %v", id, updates)
+	w.WriteHeader(http.StatusOK)
+}
+
 func GetEventAttendance(w http.ResponseWriter, r *http.Request) {
 	idStr := chi.URLParam(r, "id")
 	eventID, err := strconv.Atoi(idStr)

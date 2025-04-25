@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"nest/models"
+	"strings"
 	"time"
 
 	"github.com/jackc/pgx/v4"
@@ -237,6 +238,60 @@ func UpdateEventEndTime(ctx context.Context, eventID int, endTime time.Time) err
 		eventID,
 	)
 
+	if err != nil {
+		return fmt.Errorf("failed to update event: %w", err)
+	}
+
+	return nil
+}
+
+func UpdateEvent(ctx context.Context, eventID int, updates map[string]interface{}) error {
+	// Build dynamic query based on provided fields
+	setFields := make([]string, 0)
+	args := make([]interface{}, 0)
+	argPosition := 1
+
+	if name, ok := updates["name"].(string); ok {
+		setFields = append(setFields, fmt.Sprintf("name = $%d", argPosition))
+		args = append(args, strings.ToLower(name))
+		argPosition++
+	}
+	if description, ok := updates["description"].(string); ok {
+		setFields = append(setFields, fmt.Sprintf("description = $%d", argPosition))
+		args = append(args, strings.ToLower(description))
+		argPosition++
+	}
+	if location, ok := updates["location"].(string); ok {
+		setFields = append(setFields, fmt.Sprintf("location = $%d", argPosition))
+		args = append(args, strings.ToLower(location))
+		argPosition++
+	}
+
+	// Times
+	if startTime, ok := updates["start_time"].(time.Time); ok {
+		setFields = append(setFields, fmt.Sprintf("start_time = $%d", argPosition))
+		args = append(args, startTime)
+		argPosition++
+	}
+	if endTime, ok := updates["end_time"].(time.Time); ok {
+		setFields = append(setFields, fmt.Sprintf("end_time = $%d", argPosition))
+		args = append(args, endTime)
+		argPosition++
+	}
+
+	if len(setFields) == 0 {
+		return errors.New("no valid fields to update")
+	}
+
+	query := fmt.Sprintf(`
+			UPDATE events
+			SET %s
+			WHERE id = $%d
+		`, strings.Join(setFields, ", "), argPosition)
+
+	args = append(args, eventID)
+
+	_, err := Pool.Exec(ctx, query, args...)
 	if err != nil {
 		return fmt.Errorf("failed to update event: %w", err)
 	}

@@ -69,6 +69,7 @@ func RegisterRoutes() http.Handler {
 			r.Patch("/event/{id}/description", handlers.UpdateEventDescription)
 			r.Patch("/event/{id}/start", handlers.UpdateEventStartTime)
 			r.Patch("/event/{id}/end", handlers.UpdateEventEndTime)
+			r.Patch("/event/{id}", handlers.UpdateEvent)
 
 			r.Delete("/event/{id}", handlers.DeleteEvent)
 			r.Delete("/event/reaction", handlers.UnreactToEvent)
