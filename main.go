@@ -103,7 +103,7 @@ func main() {
 						e.Description,
 						strings.Join(going, ", "),
 						strings.Join(notGoing, ", "),
-						"https://uccelliapp.duckdns.org",
+						"https://uccelli.budgeeapp.com",
 					)
 					utils.NotifyAllUsersInGroup(int(e.GroupID), subject, body)
 				}

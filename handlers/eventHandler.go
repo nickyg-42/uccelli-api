@@ -95,7 +95,7 @@ func CreateEvent(w http.ResponseWriter, r *http.Request) {
 			endTimeEastern = event.EndTime.In(eastern)
 		}
 
-		link := "https://uccelliapp.duckdns.org"
+		link := "https://uccelli.budgeeapp.com"
 		emailBody := fmt.Sprintf(`A new event has been created in the group %s:
 
 Event Name: %s
@@ -264,7 +264,7 @@ func DeleteEvent(w http.ResponseWriter, r *http.Request) {
 			endTimeEastern = event.EndTime.In(eastern)
 		}
 
-		link := "https://uccelliapp.duckdns.org"
+		link := "https://uccelli.budgeeapp.com"
 		emailBody := fmt.Sprintf(`An event has been deleted in the group %s:
 
 Event Name: %s
